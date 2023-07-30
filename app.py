@@ -55,21 +55,19 @@ def record_report(user_id):
 		week_start = date - timedelta(days=date.weekday())
 		created_at = datetime.now()
 		day_of_week = get_day_of_week(date)
-		# now = datetime.now()
-		# today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-		now = datetime(2023, 7, 24, 7, 0, 0)
-		today = datetime(2023, 7, 24)
+		
+		now = datetime.now()
+		today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 		current_week = today - timedelta(days=today.weekday())
 	except:
 		return 'Date is not a valid datetime format', 400
 
-	if current_week != week_start:
-		next_day_from_date = date + timedelta(days=1)
-		if day_of_week == 'Sunday' and now.hour <= 8 and next_day_from_date == current_week:
-			return "Saving grace"
-		# return "Failed to record report: time period for the given record has either elapsed or has not been opened", 400
-		return f"current_week {current_week}: week_start {week_start} now {now} DOW {day_of_week} NDFD {next_day_from_date}"
 
+	if current_week != week_start:
+		if today.weekday() == 0 and now.hour <= 8 and week_start == current_week - timedelta(weeks=1):
+			pass
+		else:
+			return "Failed to record report: submission window exceeded", 403
 
 	payload = {
 		"id": 2,
@@ -88,7 +86,7 @@ def record_report(user_id):
 		if user['id'] == int(user_id):
 			for report in user['reports']:
 				if report['date'] == date:
-					return 'Failed to record report: report for the given date has been recorded', 400
+					return 'Failed to record report: report already recorded', 403
 			
 			user['reports'].append(payload)
 			response = {
