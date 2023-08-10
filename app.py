@@ -1,8 +1,14 @@
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
-from user_model import users
+from pymongo import MongoClient
+from bson import ObjectId
+from uuid import uuid1
+
 
 app = Flask(__name__)
+client = MongoClient("mongodb://localhost:27017/")
+db = client['worksheet']
+col = db['users']
 
 
 def get_day_of_week(date):
@@ -27,13 +33,11 @@ def get_day_of_week(date):
 
 @app.route('/view/reports/all')
 def get_all_reports():
-	data = []
-	for user in users:
-		data.append(user['reports'])
+	data = col.find({}, {"username": 1, "reports": 1, "_id": 0})
 	response = {
 		"message": "Fetched report data successfully",
 		"status": True,
-		"data": data
+		"data": list(data)
 	}
 	return jsonify(response)
 
@@ -64,13 +68,19 @@ def record_report(user_id):
 
 
 	if current_week != week_start:
-		if today.weekday() == 0 and now.hour <= 8 and week_start == current_week - timedelta(weeks=1):
+		# Once it is past 8:00am on Monday do not accept submissions for any other week apart from the current week
+		# today.weekday == 0 (shows that it is a monday)
+		# now.hour < 8 (the time is not yet 8:00am)
+		# week_start == current_week - timedelta(weeks=1) 
+		# 	(shows that the report we are trying to submit is a report of the past week
+		# 	and so can be allowed since the time is not yet 8:00am)
+		if today.weekday() == 0 and now.hour < 8 and week_start == current_week - timedelta(weeks=1):
 			pass
 		else:
 			return "Failed to record report: submission window exceeded", 403
 
 	payload = {
-		"id": 2,
+		"id": uuid1(),
 		"date": date,
 		"project": project,
 		"task": task,
@@ -82,22 +92,24 @@ def record_report(user_id):
 		"created-at": created_at
 	}
 
-	for user in users:
-		if user['id'] == int(user_id):
-			for report in user['reports']:
-				if report['date'] == date:
-					return 'Failed to record report: report already recorded', 403
-			
-			user['reports'].append(payload)
-			response = {
-				"message": "Report recorded successfully",
-				"status": True,
-				"data": None
-			}
-			return jsonify(response), 201
-			
-	return 'Failed to record report: user id not found', 404
+	# return 'Failed to record report: report already recorded', 409
+	report_exists = col.find({
+		'_id': ObjectId(user_id),
+		'reports.date': date
+		}, {'_id': 1})
+	if list(report_exists):
+		return 'Failed to record report: report already recorded', 409
 
+	insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
+	if not insert.matched_count:
+		return 'Failed to record report: user id not found', 404
+
+	response = {
+		"message": "Report recorded successfully",
+		"status": True,
+		"data": None
+	}
+	return jsonify(response), 201
 
 @app.route('/')
 def index():
