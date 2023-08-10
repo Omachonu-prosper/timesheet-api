@@ -2,12 +2,13 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
+from uuid import uuid1
+
 
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
-users = db['users']
-reports = db['reports']
+col = db['users']
 
 
 def get_day_of_week(date):
@@ -30,10 +31,17 @@ def get_day_of_week(date):
 			return "Sunday"
 
 
-@app.route('/view/reports/<string:week_start>/all')
-def get_all_reports(week_start):
-	week_start = datetime.strptime(week_start,  "%Y-%m-%d")
-	data = reports.find({"week-start": week_start}, {"_id": 0, "user-id": 0})
+@app.route('/view/reports/all')
+def get_all_reports():
+	now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+	current_week_start = now - timedelta(days=now.weekday())
+
+	# Fetch all reports for each user for the current week sorted by date
+	data = col.aggregate([
+		{"$match": {"reports.week-start": current_week_start}},
+		{"$sort": {"reports.date": 1}},
+		{"$project": {"reports": 1, "_id": 0, "username": 1}}
+	])
 	response = {
 		"message": "Fetched report data successfully",
 		"status": True,
@@ -80,7 +88,7 @@ def record_report(user_id):
 			return "Failed to record report: submission window exceeded", 403
 
 	payload = {
-		"user-id": ObjectId(user_id),
+		"id": str(uuid1()),
 		"date": date,
 		"project": project,
 		"task": task,
@@ -93,16 +101,16 @@ def record_report(user_id):
 	}
 
 	# return 'Failed to record report: report already recorded', 409
-	# report_exists = col.find({
-	# 	'_id': ObjectId(user_id),
-	# 	'reports.date': date
-	# 	}, {'_id': 1})
-	# if list(report_exists):
-	# 	return 'Failed to record report: report already recorded', 409
+	report_exists = col.find({
+		'_id': ObjectId(user_id),
+		'reports.date': date
+		}, {'_id': 1})
+	if list(report_exists):
+		return 'Failed to record report: report already recorded', 409
 
-	insert = reports.insert_one(payload)
-	if not insert.acknowledged:
-		return 'Failed to record report', 500
+	insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
+	if not insert.matched_count:
+		return 'Failed to record report: user id not found', 404
 
 	response = {
 		"message": "Report recorded successfully",
