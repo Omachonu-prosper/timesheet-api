@@ -33,7 +33,7 @@ def get_all_reports():
 	return jsonify(response)
 
 
-@app.route('/record/report/<string:user_id>', methods=['POST'])
+@app.route('/record/report/<string:user_id>', methods=['POST', 'PUT'])
 def record_report(user_id):
 	response = validate_record_report(request.json)
 	if response.get('error'):
@@ -44,14 +44,6 @@ def record_report(user_id):
 		return dates['message'], dates['error-code']
 	# Copies the values of dates to the response dictionary
 	response.update(dates)
-		
-	# return 'Failed to record report: report already recorded', 409
-	report_exists = col.find({
-		'_id': ObjectId(user_id),
-		'reports.date': response['date']
-		}, {'_id': 1})
-	if list(report_exists):
-		return 'Failed to record report: report already recorded', 409
 
 	payload = {
 		"id": str(uuid1()),
@@ -65,17 +57,48 @@ def record_report(user_id):
 		"week-start": response['week-start'],
 		"created-at": response['created-at']
 	}
+		
+	if request.method == 'POST':
+		# Prevent duplicate report recording
+		report_exists = col.find(
+			{'_id': ObjectId(user_id), 'reports.date': response['date']},
+			{'_id': 1}
+		)
+		if list(report_exists):
+			return 'Failed to record report: report already recorded', 409
 
-	insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
-	if not insert.matched_count:
-		return 'Failed to record report: user id not found', 404
+		insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
+		if not insert.matched_count:
+			return 'Failed to record report: user id not found', 404
 
-	response = {
-		"message": "Report recorded successfully",
-		"status": True,
-		"data": None
-	}
-	return jsonify(response), 201
+		response = {
+			"message": "Report recorded successfully",
+			"status": True,
+			"data": None
+		}
+		return jsonify(response), 201
+	
+	elif request.method == 'PUT':
+		update = col.update_one(
+			{"_id": ObjectId(user_id), "reports.date": response['date']},
+			{"$set": {
+				"reports.$.link": payload['link'],
+				"reports.$.project": payload['project'],
+				"reports.$.status": payload['status'],
+				"reports.$.duration": payload['task'],
+				"reports.$.task": payload['task']
+			}}
+		)
+		if update.matched_count != 1:
+			return "Failed to update report: report was not found", 404
+		
+		response = {
+			"message": "Report updated successfully",
+			"status": True,
+			"data": None
+		}
+		return jsonify(response), 200
+
 
 @app.route('/')
 def index():
