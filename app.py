@@ -2,13 +2,12 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
-from uuid import uuid1
-
 
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
-col = db['users']
+users = db['users']
+reports = db['reports']
 
 
 def get_day_of_week(date):
@@ -31,9 +30,10 @@ def get_day_of_week(date):
 			return "Sunday"
 
 
-@app.route('/view/reports/all')
-def get_all_reports():
-	data = col.find({}, {"username": 1, "reports": 1, "_id": 0})
+@app.route('/view/reports/<string:week_start>/all')
+def get_all_reports(week_start):
+	week_start = datetime.strptime(week_start,  "%Y-%m-%d")
+	data = reports.find({"week-start": week_start}, {"_id": 0, "user-id": 0})
 	response = {
 		"message": "Fetched report data successfully",
 		"status": True,
@@ -80,7 +80,7 @@ def record_report(user_id):
 			return "Failed to record report: submission window exceeded", 403
 
 	payload = {
-		"id": uuid1(),
+		"user-id": ObjectId(user_id),
 		"date": date,
 		"project": project,
 		"task": task,
@@ -93,16 +93,16 @@ def record_report(user_id):
 	}
 
 	# return 'Failed to record report: report already recorded', 409
-	report_exists = col.find({
-		'_id': ObjectId(user_id),
-		'reports.date': date
-		}, {'_id': 1})
-	if list(report_exists):
-		return 'Failed to record report: report already recorded', 409
+	# report_exists = col.find({
+	# 	'_id': ObjectId(user_id),
+	# 	'reports.date': date
+	# 	}, {'_id': 1})
+	# if list(report_exists):
+	# 	return 'Failed to record report: report already recorded', 409
 
-	insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
-	if not insert.matched_count:
-		return 'Failed to record report: user id not found', 404
+	insert = reports.insert_one(payload)
+	if not insert.acknowledged:
+		return 'Failed to record report', 500
 
 	response = {
 		"message": "Report recorded successfully",
