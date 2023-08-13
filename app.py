@@ -2,52 +2,55 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
-from uuid import uuid1
 
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
+from app_logic.format_data import format_data
 
 
 app = Flask(__name__)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
-col = db['users']
+users = db['users']
 
 
 @app.route('/view/reports/all')
 def get_all_reports():
-	now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-	current_week_start = now - timedelta(days=now.weekday())
+	now = datetime.now()
+	current_week = now - timedelta(days=now.weekday())
+	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for each user for the current week
-	data = col.aggregate([
-		{"$match": {"reports.week-start": current_week_start}},
-		{"$sort": {"reports.date": 1}},
-		{"$project": {"reports": 1, "_id": 0, "username": 1}}
-	])
+	data = users.find({}, {"_id": 0, f"reports.{current_week}": 1, "username": 1})
+	formated_data = format_data(data, current_week)
+	
 	response = {
 		"message": "Fetched report data successfully",
+		"week": current_week,
 		"status": True,
-		"data": list(data)
+		"data": formated_data
 	}
 	return jsonify(response)
 
 
 @app.route('/view/reports/<string:user_id>')
 def get_user_reports(user_id):
-	now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-	current_week_start = now - timedelta(days=now.weekday())
+	now = datetime.now()
+	current_week = now - timedelta(days=now.weekday())
+	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
-	data = col.aggregate([
-		{"$match": {"_id": ObjectId(user_id), "reports.$.week-start": current_week_start}},
-		{"$sort": {"reports.date": 1}},
-		{"$project": {"reports": 1, "_id": 0, "username": 1}}
-	])
+	data = users.find(
+		{"_id": ObjectId(user_id)},
+		{"_id": 0, f"reports.{current_week}": 1, "username": 1}
+	)
+	formated_data = format_data(data, current_week)
+
 	response = {
 		"message": "Fetched report data successfully",
+		"week": current_week,
 		"status": True,
-		"data": list(data)
+		"data": formated_data
 	}
 	return jsonify(response)
 
@@ -74,7 +77,7 @@ def record_report(user_id):
 	}
 
 	# Check if a recport has been recorded
-	report_exists = col.find(
+	report_exists = users.find(
 		{
 			'_id': ObjectId(user_id),
 			f"reports.{dates['week']}.{dates['day'].lower()}.day-of-week": dates['day']
@@ -98,7 +101,7 @@ def record_report(user_id):
 		status_message = "Report updated successfully"
 		failure_message = "Failed to update report: User ID not found"
 		
-	insert = col.update_one(
+	insert = users.update_one(
 		{'_id': ObjectId(user_id)},
 		{"$set": {
 			f"reports.{dates['week']}.{dates['day'].lower()}": payload
