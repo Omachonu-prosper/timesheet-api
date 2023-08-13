@@ -19,9 +19,28 @@ def get_all_reports():
 	now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 	current_week_start = now - timedelta(days=now.weekday())
 
-	# Fetch all reports for each user for the current week sorted by date
+	# Fetch all reports for each user for the current week
 	data = col.aggregate([
 		{"$match": {"reports.week-start": current_week_start}},
+		{"$sort": {"reports.date": 1}},
+		{"$project": {"reports": 1, "_id": 0, "username": 1}}
+	])
+	response = {
+		"message": "Fetched report data successfully",
+		"status": True,
+		"data": list(data)
+	}
+	return jsonify(response)
+
+
+@app.route('/view/reports/<string:user_id>')
+def get_user_reports(user_id):
+	now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+	current_week_start = now - timedelta(days=now.weekday())
+
+	# Fetch all reports for a specific user for the current week
+	data = col.aggregate([
+		{"$match": {"_id": ObjectId(user_id), "reports.$.week-start": current_week_start}},
 		{"$sort": {"reports.date": 1}},
 		{"$project": {"reports": 1, "_id": 0, "username": 1}}
 	])
@@ -42,62 +61,58 @@ def record_report(user_id):
 	dates = validate_report_date(response['date'])
 	if dates.get('error'):
 		return dates['message'], dates['error-code']
-	# Copies the values of dates to the response dictionary
-	response.update(dates)
 
 	payload = {
-		"id": str(uuid1()),
-		"date": response['date'],
+		"date": dates['date'],
 		"project": response['project'],
 		"task": response['task'],
 		"link": response['link'],
 		"status": response['status'],
 		"duration": response['duration'],
-		"day-of-week": response['day-of-week'],
-		"week-start": response['week-start'],
-		"created-at": response['created-at']
+		"day-of-week": dates['day'],
+		"modified-at": dates['created-at']
 	}
-		
+
+	# Check if a recport has been recorded
+	report_exists = col.find(
+		{
+			'_id': ObjectId(user_id),
+			f"reports.{dates['week']}.{dates['day'].lower()}.day-of-week": dates['day']
+		},
+		{'_id': 1}
+	)
+	
 	if request.method == 'POST':
-		# Prevent duplicate report recording
-		report_exists = col.find(
-			{'_id': ObjectId(user_id), 'reports.date': response['date']},
-			{'_id': 1}
-		)
-		if list(report_exists):
+		if len(list(report_exists)):
 			return 'Failed to record report: report already recorded', 409
 
-		insert = col.update_one({'_id': ObjectId(user_id)}, {'$push': {'reports': payload}})
-		if not insert.matched_count:
-			return 'Failed to record report: user id not found', 404
-
-		response = {
-			"message": "Report recorded successfully",
-			"status": True,
-			"data": None
-		}
-		return jsonify(response), 201
+		status_code = 201
+		status_message = "Report recorded successfully"
+		failure_message = "Failed to record report: User ID not found"
 	
 	elif request.method == 'PUT':
-		update = col.update_one(
-			{"_id": ObjectId(user_id), "reports.date": response['date']},
-			{"$set": {
-				"reports.$.link": payload['link'],
-				"reports.$.project": payload['project'],
-				"reports.$.status": payload['status'],
-				"reports.$.duration": payload['task'],
-				"reports.$.task": payload['task']
-			}}
-		)
-		if update.matched_count != 1:
-			return "Failed to update report: report was not found", 404
+		if  not len(list(report_exists)):
+			return 'Failed to update report: report not found', 404
 		
-		response = {
-			"message": "Report updated successfully",
-			"status": True,
-			"data": None
-		}
-		return jsonify(response), 200
+		status_code = 200
+		status_message = "Report updated successfully"
+		failure_message = "Failed to update report: User ID not found"
+		
+	insert = col.update_one(
+		{'_id': ObjectId(user_id)},
+		{"$set": {
+			f"reports.{dates['week']}.{dates['day'].lower()}": payload
+		}}
+	)
+	if insert.matched_count != 1:
+		return failure_message, 404
+		
+	response = {
+		"message": status_message,
+		"status": True,
+		"data": None
+	}
+	return jsonify(response), status_code
 
 
 @app.route('/')

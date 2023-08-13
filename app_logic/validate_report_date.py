@@ -39,6 +39,6 @@ def validate_report_date(date):
         
     response['date'] = date
     response['created-at'] = created_at
-    response['week-start'] = week_start
-    response['day-of-week'] = day_of_week
+    response['day'] = day_of_week
+    response['week'] = week_start.strftime('%Y-%m-%d')
     return response
