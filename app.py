@@ -78,9 +78,16 @@ def get_all_reports():
 	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for each user for the current week
-	data = users.find({}, {"_id": 0, f"reports.{current_week}": 1, "username": 1})
+	data = users.find({}, {
+		f"reports.{current_week}": 1,
+		"username": 1,
+		"lastname": 1,
+		"middlename": 1,
+		"firstname": 1,
+		"email": 1
+	})
 	formated_data = format_data(data, current_week)
-	
+
 	response = {
 		"message": "Fetched report data successfully",
 		"week": current_week,
@@ -91,7 +98,6 @@ def get_all_reports():
 
 
 @app.route('/view/reports/<string:user_id>')
-@jwt_required()
 def get_user_reports(user_id):
 	now = datetime.now()
 	current_week = now - timedelta(days=now.weekday())
@@ -100,7 +106,11 @@ def get_user_reports(user_id):
 	# Fetch all reports for a specific user for the current week
 	data = users.find(
 		{"_id": ObjectId(user_id)},
-		{"_id": 0, f"reports.{current_week}": 1, "username": 1}
+		{
+			f"reports.{current_week}": 1,
+			"username": 1,
+			"email": 1
+		}
 	)
 	data = list(data)
 	if not data:
@@ -110,7 +120,6 @@ def get_user_reports(user_id):
 	response = {
 		"message": "Fetched report data successfully",
 		"week": current_week,
-		"user_id": get_jwt_identity(),
 		"status": True,
 		"data": formated_data
 	}
