@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
-from functools import wraps
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 
 from app_logic.validate_record_report import validate_record_report
@@ -19,22 +18,6 @@ db = client['worksheet']
 users = db['users']
 
 
-# def jwt_required(func):
-# 	@wraps(func)
-# 	def wrapper(*args, **kwargs):
-# 		token = request.headers.get('Authorization')
-# 		if not token:
-# 			return "Failed to access endpoint: access token not provided", 401
-
-# 		token = token.split()[1]
-# 		payload = verify_jwt(token)
-# 		if payload.get('error'):
-# 			return payload['message'], payload['error-code']
-		
-# 		return func(*args, **kwargs)
-# 	return wrapper
-
-
 @app.route('/user/login', methods=['POST'])
 def login():
 	data = request.json
@@ -46,10 +29,10 @@ def login():
 		{'username': username, 'password': password},
 		{'_id': 1}
 	)
-	user_id = str(dict(user)['_id'])
-	if not user_id:
-		return "Failed to authenticate user: Invalid credentials", 401
+	if user is None:
+		return "Failed to log user in: Invalid credentials", 404
 	
+	user_id = str(user['_id'])
 	token = create_access_token(identity=user_id)
 	return jsonify({'access_token': token})
 
@@ -119,6 +102,7 @@ def get_user_reports(user_id):
 	response = {
 		"message": "Fetched report data successfully",
 		"week": current_week,
+		"user_id": get_jwt_identity(),
 		"status": True,
 		"data": formated_data
 	}
