@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
 from functools import wraps
-
-import jwt
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
@@ -13,77 +12,46 @@ from app_logic.format_data import format_data
 
 
 app = Flask(__name__)
-SECRET_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoieydfaWQnOiBPYmplY3RJZCgnNjRkOTIzMDc3MWUwNDVhN2Y5NzkxMWU1Jyl9IiwiZXhwIjoxNjkyMDI1NDM1fQ.x8raWx4SQMW_uD5XA-SV1GazIpcxDc3JmvXhyR-KWUA'
-algorithm = 'HS256'
+app.config['SECRET_KEY'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoieydfaWQnOiBPYmplY3RJZCgnNjRkOTIzMDc3MWUwNDVhN2Y5NzkxMWU1Jyl9IiwiZXhwIjoxNjkyMDI1NDM1fQ.x8raWx4SQMW_uD5XA-SV1GazIpcxDc3JmvXhyR-KWUA'
+jwt = JWTManager(app)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
 users = db['users']
 
 
-def generate_jwt(user_id, remember_me):
-	if remember_me:
-		expiry = datetime.utcnow() + timedelta(weeks=1)
-	else:
-		expiry = datetime.utcnow() + timedelta(hours=1)
-	payload = {
-		'user_id': str(user_id),
-		'exp': expiry
-	}
-	token = jwt.encode(payload, SECRET_KEY, algorithm=algorithm)
-	return token
+# def jwt_required(func):
+# 	@wraps(func)
+# 	def wrapper(*args, **kwargs):
+# 		token = request.headers.get('Authorization')
+# 		if not token:
+# 			return "Failed to access endpoint: access token not provided", 401
 
-def verify_jwt(token):
-	try:
-		payload = jwt.decode(token, SECRET_KEY, algorithms=algorithm)
-		return payload
-	except jwt.ExpiredSignatureError:
-		return {
-			'error': True,
-			'message': 'Session expired: login required',
-			'error-code': 401
-		}
-	except jwt.InvalidTokenError:
-		return {
-			'error': True,
-			'message': 'Invalid token: bad request header',
-			'error-code': 400
-		}
-
-
-def jwt_required(func):
-	@wraps(func)
-	def wrapper(*args, **kwargs):
-		token = request.headers.get('Authorization')
-		if not token:
-			return "Failed to access endpoint: access token not provided", 401
-
-		token = token.split()[1]
-		payload = verify_jwt(token)
-		if payload.get('error'):
-			return payload['message'], payload['error-code']
+# 		token = token.split()[1]
+# 		payload = verify_jwt(token)
+# 		if payload.get('error'):
+# 			return payload['message'], payload['error-code']
 		
-		return func(*args, **kwargs)
-	return wrapper
+# 		return func(*args, **kwargs)
+# 	return wrapper
 
 
 @app.route('/user/login', methods=['POST'])
 def login():
 	data = request.json
-	remember_me = data.get('remember-me')
-	username = data.get('username')
-	password = data.get('password')
+	remember_me = data.get('remember-me', None)
+	username = data.get('username', None)
+	password = data.get('password', None)
 
-	user = users.find(
+	user = users.find_one(
 		{'username': username, 'password': password},
 		{'_id': 1}
 	)
-	user = list(user)
-	if not user:
+	user_id = str(dict(user)['_id'])
+	if not user_id:
 		return "Failed to authenticate user: Invalid credentials", 401
 	
-	user_id = user[0]
-	token = generate_jwt(user_id, remember_me)
-	return jsonify({'access_token': token}), 200
+	token = create_access_token(identity=user_id)
+	return jsonify({'access_token': token})
 
 
 @app.route('/user/signup', methods=['POST'])
@@ -112,7 +80,6 @@ def signup():
 	return response, 201
 
 
-
 @app.route('/view/reports/all')
 def get_all_reports():
 	now = datetime.now()
@@ -133,7 +100,7 @@ def get_all_reports():
 
 
 @app.route('/view/reports/<string:user_id>')
-@jwt_required
+@jwt_required()
 def get_user_reports(user_id):
 	now = datetime.now()
 	current_week = now - timedelta(days=now.weekday())
