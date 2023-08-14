@@ -33,7 +33,13 @@ def login():
 	
 	user_id = str(user['_id'])
 	token = create_access_token(identity=user_id)
-	return jsonify({'access_token': token})
+	response = {
+		'access_token': token,
+		'message': 'Login successful',
+		'data': None,
+		'status': True
+	}
+	return jsonify(response)
 
 
 @app.route('/user/signup', methods=['POST'])
@@ -43,7 +49,7 @@ def signup():
 		return validate_signup['message'], validate_signup['error-code']
 
 	# Check if a user with the username already exists
-	user = users.find(
+	user = users.find_one(
 		{"username": validate_signup['username']},
 		{"_id": 1}
 	)
@@ -51,12 +57,15 @@ def signup():
 		return "Failed to create user: username is taken", 409
 	
 	insert = users.insert_one(validate_signup)
+	user_id = str(insert.inserted_id)
 	if not insert.acknowledged:
 		return "Failed to create user: an error occured", 500
 	
+	token = create_access_token(identity=user_id)
 	response = {
 		'message': "User created successfully",
 		'data': None,
+		'access-token': token,
 		'status': True
 	}
 	return response, 201
