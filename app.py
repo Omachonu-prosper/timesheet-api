@@ -5,6 +5,7 @@ from bson import ObjectId
 
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
+from app_logic.validate_signup_data import validate_signup_data
 from app_logic.format_data import format_data
 
 
@@ -14,10 +15,36 @@ db = client['worksheet']
 users = db['users']
 
 
+@app.route('/user/signup', methods=['POST'])
+def signup():
+	validate_signup = validate_signup_data(request.json)
+	if validate_signup.get('error'):
+		return validate_signup['message'], validate_signup['error-code']
+
+	# Check if a user with the username already exists
+	user = users.find(
+		{"username": validate_signup['username']},
+		{"_id": 1}
+	)
+	if list(user):
+		return "Failed to create user: username is taken", 409
+	
+	insert = users.insert_one(validate_signup)
+	if not insert.acknowledged:
+		return "Failed to create user: an error occured", 500
+	
+	response = {
+		'message': "User created successfully",
+		'data': None,
+		'status': True
+	}
+	return response, 201
+
+
 @app.route('/view/reports/all')
 def get_all_reports():
 	now = datetime.now()
-	current_week = now - timedelta(days=now.weekday())
+	current_week = now - timedelta(days=now.weekday(), weeks=1)
 	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for each user for the current week
@@ -36,7 +63,7 @@ def get_all_reports():
 @app.route('/view/reports/<string:user_id>')
 def get_user_reports(user_id):
 	now = datetime.now()
-	current_week = now - timedelta(days=now.weekday())
+	current_week = now - timedelta(days=now.weekday(), weeks=1)
 	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
@@ -44,6 +71,9 @@ def get_user_reports(user_id):
 		{"_id": ObjectId(user_id)},
 		{"_id": 0, f"reports.{current_week}": 1, "username": 1}
 	)
+	data = list(data)
+	if not data:
+		return "Failed to fetch reports: user id not found", 404
 	formated_data = format_data(data, current_week)
 
 	response = {
