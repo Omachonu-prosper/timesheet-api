@@ -136,7 +136,7 @@ def get_all_reports():
 @jwt_required
 def get_user_reports(user_id):
 	now = datetime.now()
-	current_week = now - timedelta(days=now.weekday(), weeks=1)
+	current_week = now - timedelta(days=now.weekday())
 	current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
