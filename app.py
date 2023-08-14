@@ -21,7 +21,6 @@ users = db['users']
 @app.route('/user/login', methods=['POST'])
 def login():
 	data = request.json
-	remember_me = data.get('remember-me', None)
 	username = data.get('username', None)
 	password = data.get('password', None)
 
@@ -48,7 +47,7 @@ def signup():
 		{"username": validate_signup['username']},
 		{"_id": 1}
 	)
-	if list(user):
+	if user is not None:
 		return "Failed to create user: username is taken", 409
 	
 	insert = users.insert_one(validate_signup)
