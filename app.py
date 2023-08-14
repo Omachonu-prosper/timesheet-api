@@ -108,8 +108,9 @@ def get_user_reports(user_id):
 	return jsonify(response)
 
 
-@app.route('/record/report/<string:user_id>', methods=['POST', 'PUT'])
-def record_report(user_id):
+@app.route('/record/report', methods=['POST', 'PUT'])
+@jwt_required()
+def record_report():
 	response = validate_record_report(request.json)
 	if response.get('error'):
 		return response['message'], response['error-code']
@@ -118,6 +119,7 @@ def record_report(user_id):
 	if dates.get('error'):
 		return dates['message'], dates['error-code']
 
+	user_id = get_jwt_identity()
 	payload = {
 		"date": dates['date'],
 		"project": response['project'],
