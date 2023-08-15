@@ -36,6 +36,7 @@ def login():
 	response = {
 		'access_token': token,
 		'message': 'Login successful',
+		'user-id': user_id,
 		'data': None,
 		'status': True
 	}
@@ -66,6 +67,7 @@ def signup():
 		'message': "User created successfully",
 		'data': None,
 		'access-token': token,
+		'user-id': user_id,
 		'status': True
 	}
 	return response, 201
