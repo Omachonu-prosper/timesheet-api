@@ -100,10 +100,10 @@ def get_all_reports():
 	# If there is no current-week query parameter make the system use the previous week
 	current_week = request.args.get('current-week', None)
 	if current_week:
-		# try:
-		current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
-		# except:
-			# return "Failed to fetch report data: current_week is not a valid date format", 400
+		try:
+			current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
+		except:
+			return "Failed to fetch report data: current_week is not a valid date format", 400
 	else:
 		now = datetime.now()
 		current_week = now - timedelta(days=now.weekday(), weeks=1)
