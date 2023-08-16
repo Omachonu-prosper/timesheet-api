@@ -33,6 +33,8 @@ def login():
 	data = request.json
 	email = data.get('email', None)
 	password = data.get('password', None)
+	if not email or not password:
+		return 'Missing required parameter', 400
 
 	user = users.find_one(
 		{'email': email},
