@@ -97,9 +97,17 @@ def signup():
 
 @app.route('/view/reports/all')
 def get_all_reports():
-	now = datetime.now()
-	current_week = now - timedelta(days=now.weekday(), weeks=1)
-	current_week = current_week.strftime('%Y-%m-%d')
+	# If there is no current-week query parameter make the system use the previous week
+	current_week = request.args.get('current-week', None)
+	if current_week:
+		# try:
+		current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
+		# except:
+			# return "Failed to fetch report data: current_week is not a valid date format", 400
+	else:
+		now = datetime.now()
+		current_week = now - timedelta(days=now.weekday(), weeks=1)
+		current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for each user for the current week
 	data = users.find({}, {
@@ -123,9 +131,17 @@ def get_all_reports():
 
 @app.route('/view/reports/<string:user_id>')
 def get_user_reports(user_id):
-	now = datetime.now()
-	current_week = now - timedelta(days=now.weekday())
-	current_week = current_week.strftime('%Y-%m-%d')
+	# If there is no current-week query parameter make the system use the current week
+	current_week = request.args.get('current-week', None)
+	if current_week:
+		try:
+			current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
+		except:
+			return "Failed to fetch report data: current_week is not a valid date format", 400
+	else:
+		now = datetime.now()
+		current_week = now - timedelta(days=now.weekday())
+		current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
 	data = users.find(
