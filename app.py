@@ -11,7 +11,9 @@ from app_logic.format_data import format_data
 
 
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoieydfaWQnOiBPYmplY3RJZCgnNjRkOTIzMDc3MWUwNDVhN2Y5NzkxMWU1Jyl9IiwiZXhwIjoxNjkyMDI1NDM1fQ.x8raWx4SQMW_uD5XA-SV1GazIpcxDc3JmvXhyR-KWUA'
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
 jwt = JWTManager(app)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
