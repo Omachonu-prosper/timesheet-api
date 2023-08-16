@@ -31,15 +31,15 @@ users = db['users']
 @app.route('/user/login', methods=['POST'])
 def login():
 	data = request.json
-	username = data.get('username', None)
+	email = data.get('email', None)
 	password = data.get('password', None)
 
 	user = users.find_one(
-		{'username': username},
+		{'email': email},
 		{'_id': 1, 'password': 1}
 	)
 	if user is None:
-		return "Failed to log user in: user not found", 404
+		return "Failed to log user in: email not found", 404
 	password_matchs = bcrypt.check_password_hash(user['password'], password)
 	if not password_matchs:
 		return "Failed to log user in: invalid credentials", 404
@@ -62,6 +62,14 @@ def signup():
 	if validate_signup.get('error'):
 		return validate_signup['message'], validate_signup['error-code']
 
+	# Check if a user with the email already exists
+	user = users.find_one(
+		{"email": validate_signup['email']},
+		{"_id": 1}
+	)
+	if user is not None:
+		return "Failed to create user: email is taken", 409
+	
 	# Check if a user with the username already exists
 	user = users.find_one(
 		{"username": validate_signup['username']},
@@ -168,7 +176,7 @@ def record_report():
 		"modified-at": dates['created-at']
 	}
 
-	# Check if a recport has been recorded
+	# Check if a report has been recorded
 	report_exists = users.find(
 		{
 			'_id': ObjectId(user_id),
