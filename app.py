@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
@@ -13,8 +14,15 @@ from app_logic.format_data import format_data
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoieydfaWQnOiBPYmplY3RJZCgnNjRkOTIzMDc3MWUwNDVhN2Y5NzkxMWU1Jyl9IiwiZXhwIjoxNjkyMDI1NDM1fQ.x8raWx4SQMW_uD5XA-SV1GazIpcxDc3JmvXhyR-KWUA'
+
+# Bcrypt instantiation
+bcrypt = Bcrypt(app)
+
+# JWT instantiation 
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
 jwt = JWTManager(app)
+
+# Pymongo instantiation
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
 users = db['users']
@@ -27,12 +35,15 @@ def login():
 	password = data.get('password', None)
 
 	user = users.find_one(
-		{'username': username, 'password': password},
-		{'_id': 1}
+		{'username': username},
+		{'_id': 1, 'password': 1}
 	)
 	if user is None:
-		return "Failed to log user in: Invalid credentials", 404
-	
+		return "Failed to log user in: user not found", 404
+	password_matchs = bcrypt.check_password_hash(user['password'], password)
+	if not password_matchs:
+		return "Failed to log user in: invalid credentials", 404
+		
 	user_id = str(user['_id'])
 	token = create_access_token(identity=user_id)
 	response = {
@@ -59,6 +70,7 @@ def signup():
 	if user is not None:
 		return "Failed to create user: username is taken", 409
 	
+	validate_signup['password'] = bcrypt.generate_password_hash(validate_signup['password'])
 	insert = users.insert_one(validate_signup)
 	user_id = str(insert.inserted_id)
 	if not insert.acknowledged:
