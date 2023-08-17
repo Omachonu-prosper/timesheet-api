@@ -1,15 +1,22 @@
+import os
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+from functools import wraps
 from flask_bcrypt import Bcrypt
-from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson import ObjectId
+from dotenv import load_dotenv
 
+# App logic dependencies
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
 from app_logic.validate_signup_data import validate_signup_data
 from app_logic.format_data import format_data
 
+
+# Load all environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -27,8 +34,22 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
 users = db['users']
 
+# Decorator to make sure all endpoints cant be accessed without an api key
+def api_key_required(f):
+	@wraps(f)
+	def wrapper(*args, **kwargs):
+		server_api_key = os.environ.get('API_KEY', None)
+		client_api_key = request.headers.get('x-api-key', None)
+		if not client_api_key:
+			return "Unauthorized: no API key was sent with the request header", 400
+		if server_api_key != client_api_key:
+			return "Unauthorized: invalid API key", 401
+		return f(*args, **kwargs)
+	return wrapper
+	
 
 @app.route('/user/login', methods=['POST'])
+@api_key_required
 def login():
 	data = request.json
 	email = data.get('email', None)
@@ -59,6 +80,7 @@ def login():
 
 
 @app.route('/user/signup', methods=['POST'])
+@api_key_required
 def signup():
 	validate_signup = validate_signup_data(request.json)
 	if validate_signup.get('error'):
@@ -98,6 +120,7 @@ def signup():
 
 
 @app.route('/view/reports/all')
+@api_key_required
 def get_all_reports():
 	# If there is no current-week query parameter make the system use the previous week
 	current_week = request.args.get('current-week', None)
@@ -132,6 +155,7 @@ def get_all_reports():
 
 
 @app.route('/view/reports/<string:user_id>')
+@api_key_required
 def get_user_reports(user_id):
 	# If there is no current-week query parameter make the system use the current week
 	current_week = request.args.get('current-week', None)
@@ -172,6 +196,7 @@ def get_user_reports(user_id):
 
 
 @app.route('/record/report', methods=['POST', 'PUT'])
+@api_key_required
 @jwt_required()
 def record_report():
 	response = validate_record_report(request.json)
@@ -237,6 +262,7 @@ def record_report():
 
 
 @app.route('/')
+@api_key_required
 def index():
 	return "Timesheet API V-0.0.1", 200
 
