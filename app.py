@@ -1,8 +1,6 @@
-import os
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
-from functools import wraps
 from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 from bson import ObjectId
@@ -13,6 +11,7 @@ from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
 from app_logic.validate_signup_data import validate_signup_data
 from app_logic.format_data import format_data
+from app_logic.decorators import api_key_required
 
 
 # Load all environment variables
@@ -33,19 +32,6 @@ jwt = JWTManager(app)
 client = MongoClient("mongodb://localhost:27017/")
 db = client['worksheet']
 users = db['users']
-
-# Decorator to make sure all endpoints cant be accessed without an api key
-def api_key_required(f):
-	@wraps(f)
-	def wrapper(*args, **kwargs):
-		server_api_key = os.environ.get('API_KEY', None)
-		client_api_key = request.headers.get('x-api-key', None)
-		if not client_api_key:
-			return "Unauthorized: no API key was sent with the request header", 400
-		if server_api_key != client_api_key:
-			return "Unauthorized: invalid API key", 401
-		return f(*args, **kwargs)
-	return wrapper
 	
 
 @app.route('/user/login', methods=['POST'])
