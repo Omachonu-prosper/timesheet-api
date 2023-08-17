@@ -30,7 +30,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
 jwt = JWTManager(app)
 
 # Pymongo instantiation
-app_environment = os.environ.get('APP_ENVIRONMENT', None)
+app_environment = os.environ.get('APP_ENVIRONMENT', 'development')
 if app_environment.lower() == 'production':
 	db_uri = os.environ.get('DB_URI')
 else:
