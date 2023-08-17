@@ -20,8 +20,7 @@ from app_logic.decorators import api_key_required
 load_dotenv()
 
 app = Flask(__name__)
-
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'SECRET')
 
 # Bcrypt instantiation
 bcrypt = Bcrypt(app)
@@ -31,7 +30,13 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
 jwt = JWTManager(app)
 
 # Pymongo instantiation
-client = MongoClient("mongodb://localhost:27017/")
+app_environment = os.environ.get('APP_ENVIRONMENT', None)
+if app_environment.lower() == 'production':
+	db_uri = os.environ.get('DB_URI')
+else:
+	db_uri = 'mongodb://localhost:27017/'
+
+client = MongoClient(db_uri)
 db = client['worksheet']
 users = db['users']
 	
@@ -255,4 +260,7 @@ def index():
 	return "Timesheet API V-0.0.1", 200
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	if app_environment.lower() == 'production':
+		app.run()
+	else:
+		app.run(debug=True)
