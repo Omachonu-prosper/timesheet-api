@@ -1,4 +1,5 @@
 # External libraries and dependencies
+import os
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
@@ -20,7 +21,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoieydfaWQnOiBPYmplY3RJZCgnNjRkOTIzMDc3MWUwNDVhN2Y5NzkxMWU1Jyl9IiwiZXhwIjoxNjkyMDI1NDM1fQ.x8raWx4SQMW_uD5XA-SV1GazIpcxDc3JmvXhyR-KWUA'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 # Bcrypt instantiation
 bcrypt = Bcrypt(app)
