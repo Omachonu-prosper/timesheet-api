@@ -15,4 +15,5 @@ packaging==23.1
 PyJWT==2.8.0
 pymongo==4.4.1
 python-dotenv==0.21.1
-Werkzeug==2.2.0
+Werkzeug==2.2.2
+Flask-Cors
