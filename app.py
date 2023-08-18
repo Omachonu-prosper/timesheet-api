@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 # App logic dependencies
 from app_logic.validate_record_report import validate_record_report
@@ -16,11 +17,15 @@ from app_logic.format_data import format_data
 from app_logic.decorators import api_key_required
 
 
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'SECRET')
+
+
 # Load all environment variables
 load_dotenv()
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'SECRET')
+# Handle CORS
+CORS(app)
 
 # Bcrypt instantiation
 bcrypt = Bcrypt(app)
