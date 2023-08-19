@@ -4,17 +4,17 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 from flask_bcrypt import Bcrypt
-from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
 from flask_cors import CORS
 
 # App logic dependencies
+from app_logic.connect_to_db import users, admins
 from app_logic.validate_record_report import validate_record_report
 from app_logic.validate_report_date import validate_report_date
 from app_logic.validate_signup_data import validate_signup_data
 from app_logic.format_data import format_data
-from app_logic.decorators import api_key_required
+from app_logic.decorators import api_key_required, admin_protected
 
 
 app = Flask(__name__)
@@ -34,17 +34,33 @@ bcrypt = Bcrypt(app)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
 jwt = JWTManager(app)
 
-# Pymongo instantiation
-app_environment = os.environ.get('APP_ENVIRONMENT', 'development')
-if app_environment.lower() == 'production':
-	db_uri = os.environ.get('DB_URI')
-else:
-	db_uri = 'mongodb://localhost:27017/'
 
-client = MongoClient(db_uri)
-db = client['worksheet']
-users = db['users']
+@app.route('/admin/login', methods=['POST'])
+@api_key_required
+def admin_login():
+	data = request.json
+	username = data.get('username', None)
+	password = data.get('password', None)
+	if not username or not password:
+		return 'Missing required parameter', 400
+
+	admin = admins.find_one(
+		{"username": username},
+		{"_id": 1}
+	)
+	if admin is None:
+		return "Login failed: invalid credentials", 404
 	
+	admin_id = str(admin['_id'])
+	token = create_access_token(identity=admin_id)
+	response = {
+		'access_token': token,
+		'message': 'Login successful',
+		'data': None,
+		'status': True
+	}
+	return jsonify(response), 200
+
 
 @app.route('/user/login', methods=['POST'])
 @api_key_required
@@ -119,6 +135,8 @@ def signup():
 
 @app.route('/view/reports/all')
 @api_key_required
+@jwt_required()
+@admin_protected
 def get_all_reports():
 	# If there is no current-week query parameter make the system use the previous week
 	current_week = request.args.get('current-week', None)
@@ -154,6 +172,7 @@ def get_all_reports():
 
 @app.route('/view/reports/<string:user_id>')
 @api_key_required
+@jwt_required()
 def get_user_reports(user_id):
 	# If there is no current-week query parameter make the system use the current week
 	current_week = request.args.get('current-week', None)
@@ -265,6 +284,7 @@ def index():
 	return "Timesheet API V-0.0.1", 200
 
 if __name__ == '__main__':
+	app_environment = os.environ.get('APP_ENVIRONMENT', 'development')
 	if app_environment.lower() == 'production':
 		app.run()
 	else:
