@@ -12,6 +12,8 @@ load_dotenv()
 
 class TestRoutes(unittest.TestCase):
     API_KEY = os.environ.get('API_KEY', None)
+    user_id = None
+    access_token = None
     
     def test_index(self):
         """
@@ -82,6 +84,8 @@ class TestRoutes(unittest.TestCase):
 
         # Testing complete payload
         complete_payload_request = requests.post(url=url, data=json.dumps(complete_payload), headers=headers)
+        self.user_id = complete_payload_request.json()['user-id']
+        self.access_token = complete_payload_request.json()['access-token']
 
         # Testing duplicate user
         complete_payload['username'] = username2
