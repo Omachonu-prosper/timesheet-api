@@ -41,8 +41,10 @@ class TestValidateReportDate(unittest.TestCase):
     def test_invalid_date(self):
         date = '2023-45-90'
         date2 = '04-05-2023'
+        date3 = 'not-a-date'
         validate_date = validate_report_date(date)
         validate_date2 = validate_report_date(date2)
+        validate_date3 = validate_report_date(date3)
 
         self.assertEqual(validate_date['message'], 'Date is not a valid datetime format')
         self.assertEqual(validate_date['error-code'], 400)
@@ -50,3 +52,6 @@ class TestValidateReportDate(unittest.TestCase):
         self.assertEqual(validate_date2['message'], 'Date is not a valid datetime format')
         self.assertEqual(validate_date2['error-code'], 400)
         self.assertTrue(validate_date2['error'])
+        self.assertEqual(validate_date3['message'], 'Date is not a valid datetime format')
+        self.assertEqual(validate_date3['error-code'], 400)
+        self.assertTrue(validate_date3['error'])
