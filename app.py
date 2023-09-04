@@ -236,7 +236,7 @@ def get_user_reports(user_id):
 		}), 404
 	
 	# Since formated_data returns an array of objects we get the first (and only)
-	# object from the returned data and send that to the user
+	# object from the returned data and send that to the client
 	formated_data = format_data(data, current_week)[0]
 
 	response = {
