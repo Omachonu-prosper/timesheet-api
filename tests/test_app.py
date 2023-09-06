@@ -129,7 +129,6 @@ class TestRoutes(unittest.TestCase):
         - Requests with incomplete payload
         - Correct email with wrong password
         - Correct password wrong email
-        - Wrong credentials
         - Correct credentials
         """
         url = 'http://localhost:5000/user/login'
@@ -137,15 +136,42 @@ class TestRoutes(unittest.TestCase):
             'x-api-key': self.API_KEY,
             'Content-Type': 'application/json'
         }
+        
+        # Create a user to be used to test the login
+        email = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 10))) + '@test.com'
+        username = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 10)))
+        password = 'password'
+        payload = {
+            'firstname': 'firstname',
+            'lastname': 'lastname',
+            'username': username,
+            'email': email,
+            'password': password
+        }
+        user = requests.post(url='http://localhost:5000/user/signup', headers=headers, data=json.dumps(payload))
 
         # Request with incomplete payload
-        req_without_passwd = requests.post(url=url, headers=headers, data=json.dumps({ 'email': 'test@example.com' }))
-        req_without_email = requests.post(url=url, headers=headers, data=json.dumps({ 'password': 'password' }))
-
+        req_without_passwd = requests.post(url=url, headers=headers, data=json.dumps({ 'email': email }))
+        req_without_email = requests.post(url=url, headers=headers, data=json.dumps({ 'password': password }))
         self.assertEqual(req_without_passwd.status_code, 400)
         self.assertEqual(req_without_email.status_code, 400)
         self.assertFalse(req_without_passwd.json()['status'])
         self.assertFalse(req_without_email.json()['status'])
-        self.assertEqual(req_without_passwd.json()['message'], 'Missing required parameter')
-        self.assertEqual(req_without_email.json()['message'], 'Missing required parameter')
-        
+
+        # Correct email with wrong password
+        correct_email = requests.post(url=url, headers=headers, data=json.dumps({ 'email': email, 'password': 'wrong-password' }))  
+        self.assertEqual(correct_email.status_code, 404)
+        self.assertFalse(correct_email.json()['status'])
+
+        # Correct password wrong email
+        correct_password = requests.post(url=url, headers=headers, data=json.dumps({ 'email': 'wrong-email', 'password': password }))  
+        self.assertEqual(correct_password.status_code, 404)
+        self.assertFalse(correct_password.json()['status'])
+
+        # Correct credentials
+        correct_credentials = requests.post(url=url, headers=headers, data=json.dumps({ 'email': email, 'password': password }))
+        self.assertEqual(correct_credentials.status_code, 200)
+        self.assertTrue(correct_credentials.json()['status'])
+        self.assertIsNotNone(correct_credentials.json()['access_token'])
+        self.assertIsNotNone(correct_credentials.json()['message'])
+        self.assertIsNotNone(correct_credentials.json()['user-id'])
