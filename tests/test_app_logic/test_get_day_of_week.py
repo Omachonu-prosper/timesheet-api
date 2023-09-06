@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime
 from app_logic.get_day_of_week import get_day_of_week
 
+
 """
 Test the function that gets the day of the week from a given date
 
@@ -12,7 +13,6 @@ Test the function that gets the day of the week from a given date
 # Test cases
     - valid dates
 """
-
 class TestGetDayOfWeek(unittest.TestCase):
     def test_valid_dates(self):
         day1 = datetime.strptime('2023-09-01', '%Y-%m-%d')

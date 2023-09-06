@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime
 from app_logic.validate_report_date import validate_report_date
 
+
 """
 Unittest for the function that validates a date,
 and checks if a date is within the current submission window
@@ -12,7 +13,6 @@ and checks if a date is within the current submission window
 - valid dates (within the submission window)
 - Invalid dates
 """
-
 class TestValidateReportDate(unittest.TestCase):
     def test_valid_outside_sub_window(self):
         date = '2023-08-01'
