@@ -121,3 +121,31 @@ class TestRoutes(unittest.TestCase):
         self.assertEqual(duplicate_email.json()['message'], 'Failed to create user: email is taken')
         self.assertFalse(duplicate_email.json()['status'])
 
+    def test_login(self):
+        """
+        Test function to test /user/login
+
+        Test cases
+        - Requests with incomplete payload
+        - Correct email with wrong password
+        - Correct password wrong email
+        - Wrong credentials
+        - Correct credentials
+        """
+        url = 'http://localhost:5000/user/login'
+        headers = {
+            'x-api-key': self.API_KEY,
+            'Content-Type': 'application/json'
+        }
+
+        # Request with incomplete payload
+        req_without_passwd = requests.post(url=url, headers=headers, data=json.dumps({ 'email': 'test@example.com' }))
+        req_without_email = requests.post(url=url, headers=headers, data=json.dumps({ 'password': 'password' }))
+
+        self.assertEqual(req_without_passwd.status_code, 400)
+        self.assertEqual(req_without_email.status_code, 400)
+        self.assertFalse(req_without_passwd.json()['status'])
+        self.assertFalse(req_without_email.json()['status'])
+        self.assertEqual(req_without_passwd.json()['message'], 'Missing required parameter')
+        self.assertEqual(req_without_email.json()['message'], 'Missing required parameter')
+        
