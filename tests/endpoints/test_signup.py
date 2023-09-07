@@ -34,10 +34,6 @@ class TestSignup(unittest.TestCase):
         string.ascii_letters + string.digits,
         k=random.randint(5, 10)
     ))
-    username2 = ''.join(random.choices(
-        string.ascii_letters + string.digits,
-        k=random.randint(5, 10)
-    ))
     email = ''.join(random.choices(
         string.ascii_letters + string.digits,
         k=random.randint(5, 10)
@@ -50,13 +46,6 @@ class TestSignup(unittest.TestCase):
         string.ascii_letters + string.digits,
         k=random.randint(5, 10)
     ))
-    complete_payload = {
-        'firstname': firstname,
-        'lastname': lastname,
-        'username': username,
-        'email': email,
-        'password': password
-    }
 
 
     def test_incomplete_payload(self):
@@ -99,12 +88,19 @@ class TestSignup(unittest.TestCase):
 
 
     def test_on_success(self):
+        payload = {
+            'firstname': self.firstname,
+            'lastname': self.lastname,
+            'username': self.username,
+            'email': self.email,
+            'password': self.password
+        }
         req = requests.post(
             url=self.url,
-            data=json.dumps(self.complete_payload),
+            data=json.dumps(payload),
             headers=self.headers
         )
-        
+
         self.assertEqual(req.status_code, 201)
         self.assertTrue(req.json()['status'])
         self.assertIsNotNone(req.json()['access-token'])
@@ -114,31 +110,41 @@ class TestSignup(unittest.TestCase):
         helpers.delete_user(req.json()['user-id'])
 
 
-    # def test_duplicate_credentials(self):
-    #     self.complete_payload['username'] = self.username2
-    #     self.complete_payload['email'] = self.email
-    #     duplicate_email = requests.post(
-    #         url=self.url,
-    #         data=json.dumps(self.complete_payload),
-    #         headers=self.headers
-    #     )
-    #     self.complete_payload['username'] = self.username
-    #     self.complete_payload['email'] = self.email2
-    #     duplicate_username = requests.post(
-    #         url=self.url,
-    #         data=json.dumps(self.complete_payload),
-    #         headers=self.headers
-    #     )
+    def test_duplicate_credentials(self):
+        # Get the credentials of an existing user
+        existing_user = helpers.return_db_user()
+        payload =  {
+            'firstname': self.firstname,
+            'lastname': self.lastname,
+            'username': existing_user['username'],
+            'email': existing_user['email'],
+            'password': self.password
+        }
 
-    #     self.assertEqual(duplicate_username.status_code, 409)
-    #     self.assertEqual(
-    #         duplicate_username.json()['message'],
-    #         'Failed to create user: username is taken'
-    #     )
-    #     self.assertFalse(duplicate_username.json()['status'])
-    #     self.assertEqual(duplicate_email.status_code, 409)
-    #     self.assertEqual(
-    #         duplicate_email.json()['message'],
-    #         'Failed to create user: email is taken'
-    #     )
-    #     self.assertFalse(duplicate_email.json()['status'])
+        payload['email'] = existing_user['email']
+        duplicate_email = requests.post(
+            url=self.url,
+            data=json.dumps(payload),
+            headers=self.headers
+        )
+        payload['username'] = existing_user['username']
+        payload['email'] = self.email2
+        duplicate_username = requests.post(
+            url=self.url,
+            data=json.dumps(payload),
+            headers=self.headers
+        )
+
+        self.assertEqual(duplicate_username.status_code, 409)
+        self.assertEqual(
+            duplicate_username.json()['message'],
+            'Failed to create user: username is taken'
+        )
+        self.assertFalse(duplicate_username.json()['status'])
+        self.assertEqual(duplicate_email.status_code, 409)
+        self.assertEqual(
+            duplicate_email.json()['message'],
+            'Failed to create user: email is taken'
+        )
+        self.assertFalse(duplicate_email.json()['status'])
+        helpers.delete_user(existing_user['_id'])
