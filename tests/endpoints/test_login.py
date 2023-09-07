@@ -52,7 +52,7 @@ class TestLogin(unittest.TestCase):
 
 
     def test_correct_email(self):
-        correct_email = requests.post(
+        req = requests.post(
             url=self.url,
             headers=self.headers,
             data=json.dumps({
@@ -60,12 +60,12 @@ class TestLogin(unittest.TestCase):
                 'password': 'wrong-password' 
             }
         ))  
-        self.assertEqual(correct_email.status_code, 404)
-        self.assertFalse(correct_email.json()['status'])
+        self.assertEqual(req.status_code, 404)
+        self.assertFalse(req.json()['status'])
 
 
     def test_correct_passwd(self):
-        correct_password = requests.post(
+        req = requests.post(
             url=self.url,
             headers=self.headers,
             data=json.dumps({
@@ -73,12 +73,12 @@ class TestLogin(unittest.TestCase):
                 'password': self.password
             }
         ))
-        self.assertEqual(correct_password.status_code, 404)
-        self.assertFalse(correct_password.json()['status'])
+        self.assertEqual(req.status_code, 404)
+        self.assertFalse(req.json()['status'])
 
 
     def test_correct_credentials(self):
-        correct_credentials = requests.post(
+        req = requests.post(
             url=self.url,
             headers=self.headers,
             data=json.dumps({
@@ -86,8 +86,9 @@ class TestLogin(unittest.TestCase):
                 'password': self.password
             }
         ))
-        self.assertEqual(correct_credentials.status_code, 200)
-        self.assertTrue(correct_credentials.json()['status'])
-        self.assertIsNotNone(correct_credentials.json()['access_token'])
-        self.assertIsNotNone(correct_credentials.json()['message'])
-        self.assertIsNotNone(correct_credentials.json()['user-id'])
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsNotNone(req.json()['access_token'])
+        self.assertIsNotNone(req.json()['message'])
+        self.assertIsNotNone(req.json()['user-id'])
+        helpers.delete_user(req.json()['user-id'])

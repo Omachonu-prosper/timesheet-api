@@ -108,8 +108,10 @@ class TestSignup(unittest.TestCase):
         self.assertEqual(req.status_code, 201)
         self.assertTrue(req.json()['status'])
         self.assertIsNotNone(req.json()['access-token'])
+        self.assertIsNotNone(req.json()['user-id'])
         self.assertIsInstance(req.json()['access-token'], str)
         self.assertIsNotNone(req.json()['message'])
+        helpers.delete_user(req.json()['user-id'])
 
 
     # def test_duplicate_credentials(self):
