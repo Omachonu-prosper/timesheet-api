@@ -57,7 +57,7 @@ class TestLogin(unittest.TestCase):
             headers=self.headers,
             data=json.dumps({
                 'email': self.email,
-                'password': 'wrong-password' 
+                'password': 'wrong-password'
             }
         ))  
         self.assertEqual(req.status_code, 404)
