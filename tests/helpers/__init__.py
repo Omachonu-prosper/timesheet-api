@@ -24,11 +24,6 @@ def return_db_user():
         return user_obj
     else:
         return False
-        
-
-# Create a helper to test for api-keys and access-tokens for endpoints
-def api_key_required():
-    pass
 
 
 # Delete users from db after creation
