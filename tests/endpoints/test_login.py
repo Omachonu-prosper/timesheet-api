@@ -21,8 +21,14 @@ class TestLogin(unittest.TestCase):
         'x-api-key': helpers.API_KEY,
         'Content-Type': 'application/json'
     }
-    email = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 10))) + '@test.com'
-    username = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 10)))
+    username = ''.join(random.choices(
+        string.ascii_letters + string.digits,
+        k=random.randint(5, 10)
+    ))
+    email = ''.join(random.choices(
+        string.ascii_letters + string.digits,
+        k=random.randint(5, 10)
+    )) + '@test.com'
     password = 'password'
     payload = {
         'firstname': 'firstname',
@@ -31,7 +37,14 @@ class TestLogin(unittest.TestCase):
         'email': email,
         'password': password
     }
-    user = requests.post(url='http://localhost:5000/user/signup', headers=headers, data=json.dumps(payload))
+
+
+    def setUp(self):
+        self.user = requests.post(
+            url='http://localhost:5000/user/signup',
+            headers=self.headers,
+            data=json.dumps(self.payload)
+        )
 
 
     def test_incomplete_payload(self):
@@ -91,4 +104,6 @@ class TestLogin(unittest.TestCase):
         self.assertIsNotNone(req.json()['access_token'])
         self.assertIsNotNone(req.json()['message'])
         self.assertIsNotNone(req.json()['user-id'])
-        helpers.delete_user(req.json()['user-id'])
+
+    def tearDown(self):
+        helpers.delete_user(self.user.json()['user-id'])
