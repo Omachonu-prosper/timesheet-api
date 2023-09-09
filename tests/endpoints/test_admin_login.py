@@ -56,8 +56,31 @@ class TestAdminLogin(unittest.TestCase):
         self.assertEqual(req_password.status_code, 400)
         self.assertFalse(req_password.json()['status'])
 
+
     def test_incorrect_credentials(self):
-        pass
+        """
+        Workflow
+        - Send request with incorrect credentials
+            (both username and password)
+        - Test that the response is as expected
+        """
+
+        req = requests.post(
+            url=self.url,
+            headers=self.headers,
+            data=json.dumps({
+                'username': 'incorrect-username',
+                'password': 'incorrect-password'
+            })
+        )
+
+        self.assertEqual(
+            req.json()['message'],
+            'Login failed: invalid credentials'
+        )
+        self.assertFalse(req.json()['status'])
+        self.assertEqual(req.status_code, 404)
+        
 
     def test_correct_credentials(self):
         pass
