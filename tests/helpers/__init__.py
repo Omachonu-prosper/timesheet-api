@@ -7,6 +7,8 @@ from app_logic.connect_to_db import users
 
 load_dotenv()
 API_KEY = os.environ.get('API_KEY', None)
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', None)
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', None)
 
 # Returns a user object from the database which can be used in test cases
 def return_db_user():

@@ -83,4 +83,19 @@ class TestAdminLogin(unittest.TestCase):
         
 
     def test_correct_credentials(self):
-        pass
+        req = requests.post(
+            url=self.url,
+            headers=self.headers,
+            data=json.dumps({
+                'username': helpers.ADMIN_USERNAME,
+                'password': helpers.ADMIN_PASSWORD
+            })
+        )
+
+        self.assertEqual(
+            req.json()['message'],
+            'Login successful'
+        )
+        self.assertTrue(req.json()['status'])
+        self.assertEqual(req.status_code, 200)
+        self.assertIsNotNone(req.json()['access_token'])
