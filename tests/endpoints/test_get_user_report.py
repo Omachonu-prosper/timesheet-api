@@ -72,12 +72,59 @@ class TestGetUserReport(unittest.TestCase):
         pass
 
     def test_with_curernt_week(self):
+         # If we would be passing a date for a day of the week other than monday
+        #   the system should be smart enough to determine the corresponding 
+        #   monday start date for that week
+        # Example:
+        # 16th of September 2023 is a sathurday and the corresponding
+        #   start date (Monday's date for that week) is 11 of September 2023
+        #   ie: 2023-09-16 would return data for 2023-09-11
+        week = '2023-09-11'
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+        req = requests.get(
+            url=self.url + f'{self.user_id}?current-week={week}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsInstance(req.json()['data'], dict)
+        self.assertEqual(req.json()['week'], week)
+        self.assertEqual(
+            req.json()['message'],
+            'Fetched report data successfully'
+        )
         helpers.delete_user(self.user_id)
-        pass
+
 
     def test_wrong_current_week_format(self):
+        week1 = 'not-a-week'
+        week2 = '20-20-2020'
+        
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+        req1 = requests.get(
+            url=self.url + f'{self.user_id}?current-week={week1}',
+            headers=self.headers
+        )
+        self.assertEqual(req1.status_code, 400)
+        self.assertFalse(req1.json()['status'])
+        self.assertEqual(
+            req1.json()['message'],
+            'Failed to fetch report data: current_week is not a valid date format'
+        )
+
+        self.headers['Authorization'] = f"Bearer {self.admin_token}"
+        req2 = requests.get(
+            url=self.url + f'{self.user_id}?current-week={week2}',
+            headers=self.headers
+        )
+        self.assertEqual(req2.status_code, 400)
+        self.assertFalse(req2.json()['status'])
+        self.assertEqual(
+            req2.json()['message'],
+            'Failed to fetch report data: current_week is not a valid date format'
+        )
         helpers.delete_user(self.user_id)
-        pass        
+        
 
     def test_without_current_week(self):
         now = datetime.now()
