@@ -11,6 +11,7 @@ class TestGetAllReports(unittest.TestCase):
     - Try it without an admin login
     - Wrong access_token
     - Without current-week query parameter
+    - Wrong current-wek date format
     - With current-week query parameter
     """
     url = 'http://127.0.0.1:5000/view/reports/all'
@@ -70,6 +71,22 @@ class TestGetAllReports(unittest.TestCase):
 
 
     def test_with_curernt_week(self):
+        week = '2023-09-11'
+        req = requests.get(
+            url=self.url + f'?current-week={week}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsInstance(req.json()['data'], list)
+        self.assertEqual(req.json()['week'], week)
+        self.assertEqual(
+            req.json()['message'],
+            'Fetched report data successfully'
+        )
+        
+
+    def test_wrong_current_week_format(self):
         pass
 
     def test_without_current_week(self):
