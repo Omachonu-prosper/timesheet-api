@@ -61,8 +61,38 @@ class TestGetUserReport(unittest.TestCase):
 
 
     def test_wrong_user_id(self):
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+
+        # Delete the user so the user id wont match any users
         helpers.delete_user(self.user_id)
-        pass
+        req = requests.get(
+            url=self.url + f'{self.user_id}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 404)
+        self.assertFalse(req.json()['status'])
+        self.assertIsNone(req.json().get('data', None))
+        self.assertEqual(
+            req.json()['message'],
+            'Failed to fetch reports: user id not found'
+        )
+
+    
+    def test_invalid_user_id(self):
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+        req = requests.get(
+            url=self.url + 'wrongid23232ighte2424ndwed',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 422)
+        self.assertFalse(req.json()['status'])
+        self.assertIsNone(req.json().get('data', None))
+        self.assertEqual(
+            req.json()['message'],
+            'Failed to fetch reports: invalid user id'
+        )
+        helpers.delete_user(self.user_id)
+        
 
     def test_admin_access(self):
         helpers.delete_user(self.user_id)
