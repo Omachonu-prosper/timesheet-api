@@ -73,6 +73,13 @@ class TestGetAllReports(unittest.TestCase):
 
 
     def test_with_curernt_week(self):
+        # If we would be passing a date for a day of the week other than monday
+        #   the system should be smart enough to determine the corresponding 
+        #   monday start date for that week
+        # Example:
+        # 16th of September 2023 is a sathurday and the corresponding
+        #   start date (Monday's date for that week) is 11 of September 2023
+        #   ie: 2023-09-16 would return data for 2023-09-11
         week = '2023-09-11'
         req = requests.get(
             url=self.url + f'?current-week={week}',
@@ -115,14 +122,9 @@ class TestGetAllReports(unittest.TestCase):
         
 
     def test_without_current_week(self):
-        # We would be passing a date for a day of the week other than monday
-        # The system should be smart enough to determine the corresponding 
-        #   monday start date for that week
-        # Example:
-        # 16th of September 2023 is a sathurday and the corresponding
-        #   start date (Monday's date for that week) is 11 of September 2023
-        #   ie: 2023-09-16 would return data for 2023-09-11
         now = datetime.now()
+        # The admin views the date for the past week hence the subtraction
+        #   of one week from our calculation weeks
         current_week = now - timedelta(days=now.weekday(), weeks=1)
         week = current_week.strftime('%Y-%m-%d')
         req = requests.get(

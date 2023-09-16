@@ -2,6 +2,7 @@ import unittest
 import helpers
 import json
 import requests
+from datetime import datetime, timedelta
 
 class TestGetUserReport(unittest.TestCase):
     """
@@ -34,7 +35,7 @@ class TestGetUserReport(unittest.TestCase):
                 'password': helpers.ADMIN_PASSWORD
             })
         )
-        self.admin_token = f"Bearer {admin_req.json()['access_token']}"
+        self.admin_token = f"{admin_req.json()['access_token']}"
 
         # Login as a user so dependent test cases can function properly
         user = helpers.return_db_user()
@@ -46,7 +47,7 @@ class TestGetUserReport(unittest.TestCase):
                 'password': user['password']
             })
         )
-        self.admin_token = f"Bearer {user_req.json()['access_token']}"
+        self.user_token = f"{user_req.json()['access_token']}"
         self.user_id = user['_id']
 
 
@@ -79,5 +80,37 @@ class TestGetUserReport(unittest.TestCase):
         pass        
 
     def test_without_current_week(self):
+        now = datetime.now()
+        current_week = now - timedelta(days=now.weekday())
+        week = current_week.strftime('%Y-%m-%d')
+
+        # Test as an admin
+        self.headers['Authorization'] = f"Bearer {self.admin_token}"
+        req1 = requests.get(
+            url=self.url + f"{self.user_id}",
+            headers=self.headers
+        )
+        self.assertEqual(req1.status_code, 200)
+        self.assertTrue(req1.json()['status'])
+        self.assertIsInstance(req1.json()['data'], dict)
+        self.assertEqual(req1.json()['week'], week)
+        self.assertEqual(
+            req1.json()['message'],
+            'Fetched report data successfully'
+        )
+
+        # Test as a user
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+        req2 = requests.get(
+            url=self.url + f"{self.user_id}",
+            headers=self.headers
+        )
+        self.assertEqual(req2.status_code, 200)
+        self.assertTrue(req2.json()['status'])
+        self.assertIsInstance(req2.json()['data'], dict)
+        self.assertEqual(req2.json()['week'], week)
+        self.assertEqual(
+            req2.json()['message'],
+            'Fetched report data successfully'
+        )
         helpers.delete_user(self.user_id)
-        pass
