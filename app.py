@@ -220,8 +220,16 @@ def get_user_reports(user_id):
 		current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
+	try:
+		_id = ObjectId(user_id)
+	except:
+		return jsonify({
+			'message': 'Failed to fetch reports: invalid user id',
+			'status': False
+		}), 422
+
 	data = users.find(
-		{"_id": ObjectId(user_id)},
+		{"_id": _id},
 		{
 			f"reports.{current_week}": 1,
 			"username": 1,
