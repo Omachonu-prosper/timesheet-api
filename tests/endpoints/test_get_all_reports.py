@@ -17,8 +17,7 @@ class TestGetAllReports(unittest.TestCase):
     access_token = None
     headers = {
         'x-api-key': helpers.API_KEY,
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {access_token}'
+        'Content-Type': 'application/json'
     }
 
     def setUp(self):
@@ -31,20 +30,44 @@ class TestGetAllReports(unittest.TestCase):
                 'password': helpers.ADMIN_PASSWORD
             })
         )
-        self.access_token = req.json()['access_token']
+        self.headers['Authorization'] = f"Bearer {req.json()['access_token']}"
 
 
     def test_wrong_access_token(self):
-        self.access_token = 'Wrong token'
+        self.headers['Authorization'] = "Wrong token"
         req = requests.get(
             url=self.url,
             headers=self.headers
         )
-        self.assertEqual(req.status_code, 422)
+        self.assertEqual(req.status_code, 401)
         
 
     def test_not_admin(self):
-        pass
+        user = helpers.return_db_user()
+        email = user['email']
+        password = user['password']
+        login_req =  requests.post(
+            url='http://127.0.0.1:5000/user/login',
+            headers=self.headers,
+            data=json.dumps({
+                'email': email,
+                'password': password
+            })
+        )
+        self.headers['Authorization'] = f"Bearer {login_req.json()['access_token']}"
+        helpers.delete_user(user['_id'])
+        
+        req = requests.get(
+            url=self.url,
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 401)
+        self.assertFalse(req.json()['status'])
+        self.assertEqual(
+            req.json()['message'],
+            'Request Failed: you are not authorised to access this endpoint'
+        )
+
 
     def test_with_curernt_week(self):
         pass
