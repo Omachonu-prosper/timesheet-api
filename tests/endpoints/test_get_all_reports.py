@@ -10,9 +10,9 @@ class TestGetAllReports(unittest.TestCase):
     Test class to test /view/reports/all
 
     Test Cases
-    - Try it without an admin login
     - Wrong access_token
     - Without current-week query parameter
+    - Test not admin
     - Wrong current-wek date format
     - With current-week query parameter
     """
@@ -24,7 +24,7 @@ class TestGetAllReports(unittest.TestCase):
     }
 
     def setUp(self):
-        # Login as an admin so other testcases can function properly
+        # Login as an admin so dependent test cases can function properly
         req = requests.post(
             url='http://127.0.0.1:5000/admin/login',
             headers=self.headers,
