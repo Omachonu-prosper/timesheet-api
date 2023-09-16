@@ -34,8 +34,14 @@ class TestGetAllReports(unittest.TestCase):
         self.access_token = req.json()['access_token']
 
 
-    def wrong_access_token(self):
-        pass
+    def test_wrong_access_token(self):
+        self.access_token = 'Wrong token'
+        req = requests.get(
+            url=self.url,
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 422)
+        
 
     def test_not_admin(self):
         pass
