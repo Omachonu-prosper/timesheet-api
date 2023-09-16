@@ -87,8 +87,30 @@ class TestGetAllReports(unittest.TestCase):
         
 
     def test_wrong_current_week_format(self):
-        pass
+        week1 = 'not-a-week'
+        week2 = '20-20-2020'
+        req1 = requests.get(
+            url=self.url + f'?current-week={week1}',
+            headers=self.headers
+        )
+        self.assertEqual(req1.status_code, 400)
+        self.assertFalse(req1.json()['status'])
+        self.assertEqual(
+            req1.json()['message'],
+            'Failed to fetch report data: current_week is not a valid date format'
+        )
+
+        req2 = requests.get(
+            url=self.url + f'?current-week={week2}',
+            headers=self.headers
+        )
+        self.assertEqual(req2.status_code, 400)
+        self.assertFalse(req2.json()['status'])
+        self.assertEqual(
+            req2.json()['message'],
+            'Failed to fetch report data: current_week is not a valid date format'
+        )
+        
 
     def test_without_current_week(self):
         pass
-
