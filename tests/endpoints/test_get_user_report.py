@@ -10,7 +10,6 @@ class TestGetUserReport(unittest.TestCase):
 
     Test Cases
     - Wrong access_token
-    - No user or admin logged in
     - wrong user id
     - Admin access
     - User access
@@ -52,12 +51,14 @@ class TestGetUserReport(unittest.TestCase):
 
 
     def test_wrong_access_token(self):
+        self.headers['Authorization'] = "Wrong token"
+        req = requests.get(
+            url=self.url+ f'{self.user_id}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 401)
         helpers.delete_user(self.user_id)
-        pass
 
-    def test_no_user_or_admin(self):
-        helpers.delete_user(self.user_id)
-        pass
 
     def test_wrong_user_id(self):
         helpers.delete_user(self.user_id)
