@@ -11,6 +11,7 @@ class TestGetUserReport(unittest.TestCase):
     Test Cases
     - Wrong access_token
     - wrong user id
+    - invalid user id
     - Admin access
     - User access
     - Without current-week query parameter
@@ -95,12 +96,36 @@ class TestGetUserReport(unittest.TestCase):
         
 
     def test_admin_access(self):
+        self.headers['Authorization'] = f"Bearer {self.admin_token}"
+        req = requests.get(
+            url=self.url + f'{self.user_id}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsInstance(req.json()['data'], dict)
+        self.assertEqual(
+            req.json()['message'],
+            'Fetched report data successfully'
+        )
         helpers.delete_user(self.user_id)
-        pass
+
 
     def test_user_access(self):
+        self.headers['Authorization'] = f"Bearer {self.user_token}"
+        req = requests.get(
+            url=self.url + f'{self.user_id}',
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsInstance(req.json()['data'], dict)
+        self.assertEqual(
+            req.json()['message'],
+            'Fetched report data successfully'
+        )
         helpers.delete_user(self.user_id)
-        pass
+
 
     def test_with_curernt_week(self):
          # If we would be passing a date for a day of the week other than monday
