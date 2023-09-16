@@ -3,6 +3,8 @@ import json
 import requests
 import helpers
 
+from datetime import datetime, timedelta
+
 class TestGetAllReports(unittest.TestCase):
     """
     Test class to test /view/reports/all
@@ -113,4 +115,25 @@ class TestGetAllReports(unittest.TestCase):
         
 
     def test_without_current_week(self):
-        pass
+        # We would be passing a date for a day of the week other than monday
+        # The system should be smart enough to determine the corresponding 
+        #   monday start date for that week
+        # Example:
+        # 16th of September 2023 is a sathurday and the corresponding
+        #   start date (Monday's date for that week) is 11 of September 2023
+        #   ie: 2023-09-16 would return data for 2023-09-11
+        now = datetime.now()
+        current_week = now - timedelta(days=now.weekday(), weeks=1)
+        week = current_week.strftime('%Y-%m-%d')
+        req = requests.get(
+            url=self.url,
+            headers=self.headers
+        )
+        self.assertEqual(req.status_code, 200)
+        self.assertTrue(req.json()['status'])
+        self.assertIsInstance(req.json()['data'], list)
+        self.assertEqual(req.json()['week'], week)
+        self.assertEqual(
+            req.json()['message'],
+            'Fetched report data successfully'
+        )
