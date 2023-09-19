@@ -42,14 +42,20 @@ def admin_login():
 	username = data.get('username', None)
 	password = data.get('password', None)
 	if not username or not password:
-		return 'Missing required parameter', 400
+		return jsonify({
+			'message': 'Missing required parameter',
+			'status': False
+		}), 400
 
 	admin = admins.find_one(
 		{"username": username},
 		{"_id": 1}
 	)
 	if admin is None:
-		return "Login failed: invalid credentials", 404
+		return jsonify({
+			'message': 'Login failed: invalid credentials',
+			'status': False
+		}), 404
 	
 	admin_id = str(admin['_id'])
 	token = create_access_token(identity=admin_id)
@@ -69,17 +75,26 @@ def login():
 	email = data.get('email', None)
 	password = data.get('password', None)
 	if not email or not password:
-		return 'Missing required parameter', 400
+		return jsonify({
+			'message': 'Missing required parameter',
+			'status': False
+		}), 400
 
 	user = users.find_one(
 		{'email': email},
 		{'_id': 1, 'password': 1}
 	)
 	if user is None:
-		return "Failed to log user in: email not found", 404
+		return jsonify({
+			'message': 'Failed to log user in: email not found',
+			'status': False
+		}), 404
 	password_matchs = bcrypt.check_password_hash(user['password'], password)
 	if not password_matchs:
-		return "Failed to log user in: invalid credentials", 404
+		return jsonify({
+			'message': 'Failed to log user in: invalid credentials',
+			'status': False
+		}), 404
 		
 	user_id = str(user['_id'])
 	token = create_access_token(identity=user_id)
@@ -98,7 +113,10 @@ def login():
 def signup():
 	validate_signup = validate_signup_data(request.json)
 	if validate_signup.get('error'):
-		return validate_signup['message'], validate_signup['error-code']
+		return jsonify({
+			'message': validate_signup['message'],
+			'status': False
+		}), validate_signup['error-code']
 
 	# Check if a user with the email already exists
 	user = users.find_one(
@@ -106,7 +124,10 @@ def signup():
 		{"_id": 1}
 	)
 	if user is not None:
-		return "Failed to create user: email is taken", 409
+		return jsonify({
+			'message': 'Failed to create user: email is taken',
+			'status': False
+		}), 409
 	
 	# Check if a user with the username already exists
 	user = users.find_one(
@@ -114,13 +135,19 @@ def signup():
 		{"_id": 1}
 	)
 	if user is not None:
-		return "Failed to create user: username is taken", 409
+		return jsonify({
+			'message': 'Failed to create user: username is taken',
+			'status': False
+		}), 409
 	
 	validate_signup['password'] = bcrypt.generate_password_hash(validate_signup['password'])
 	insert = users.insert_one(validate_signup)
 	user_id = str(insert.inserted_id)
 	if not insert.acknowledged:
-		return "Failed to create user: an error occured", 500
+		return jsonify({
+			'message': 'Failed to create user: an error occured',
+			'status': False
+		}), 500
 	
 	token = create_access_token(identity=user_id)
 	response = {
@@ -144,7 +171,10 @@ def get_all_reports():
 		try:
 			current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
 		except:
-			return "Failed to fetch report data: current_week is not a valid date format", 400
+			return jsonify({
+				'message': 'Failed to fetch report data: current_week is not a valid date format',
+				'status': False
+			}), 400
 	else:
 		now = datetime.now()
 		current_week = now - timedelta(days=now.weekday(), weeks=1)
@@ -180,15 +210,26 @@ def get_user_reports(user_id):
 		try:
 			current_week = datetime.strptime(current_week, '%Y-%m-%d').strftime('%Y-%m-%d')
 		except:
-			return "Failed to fetch report data: current_week is not a valid date format", 400
+			return jsonify({
+				'message': 'Failed to fetch report data: current_week is not a valid date format',
+				'status': False
+			}), 400
 	else:
 		now = datetime.now()
 		current_week = now - timedelta(days=now.weekday())
 		current_week = current_week.strftime('%Y-%m-%d')
 
 	# Fetch all reports for a specific user for the current week
+	try:
+		_id = ObjectId(user_id)
+	except:
+		return jsonify({
+			'message': 'Failed to fetch reports: invalid user id',
+			'status': False
+		}), 422
+
 	data = users.find(
-		{"_id": ObjectId(user_id)},
+		{"_id": _id},
 		{
 			f"reports.{current_week}": 1,
 			"username": 1,
@@ -197,10 +238,13 @@ def get_user_reports(user_id):
 	)
 	data = list(data)
 	if not data:
-		return "Failed to fetch reports: user id not found", 404
+		return jsonify({
+			'message': 'Failed to fetch reports: user id not found',
+			'status': False
+		}), 404
 	
 	# Since formated_data returns an array of objects we get the first (and only)
-	# object from the returned data and send that to the user
+	# object from the returned data and send that to the client
 	formated_data = format_data(data, current_week)[0]
 
 	response = {
@@ -209,7 +253,7 @@ def get_user_reports(user_id):
 		"status": True,
 		"data": formated_data
 	}
-	return jsonify(response)
+	return jsonify(response), 200
 
 
 @app.route('/record/report', methods=['POST', 'PUT'])
@@ -218,11 +262,17 @@ def get_user_reports(user_id):
 def record_report():
 	response = validate_record_report(request.json)
 	if response.get('error'):
-		return response['message'], response['error-code']
+		return jsonify({
+			'message': response['message'],
+			'status': False
+		}), response['error-code']
 
 	dates = validate_report_date(response['date'])
 	if dates.get('error'):
-		return dates['message'], dates['error-code']
+		return jsonify({
+			'message': dates['message'],
+			'status': False
+		}), dates['error-code']
 
 	user_id = get_jwt_identity()
 	payload = {
@@ -247,7 +297,10 @@ def record_report():
 	
 	if request.method == 'POST':
 		if len(list(report_exists)):
-			return 'Failed to record report: report already recorded', 409
+			return jsonify({
+				'message': 'Failed to record report: report already recorded',
+				'status': False
+			}), 409
 
 		status_code = 201
 		status_message = "Report recorded successfully"
@@ -255,7 +308,10 @@ def record_report():
 	
 	elif request.method == 'PUT':
 		if  not len(list(report_exists)):
-			return 'Failed to update report: report not found', 404
+			return jsonify({
+				'message': 'Failed to update report: report not found',
+				'status': False
+			}), 404
 		
 		status_code = 200
 		status_message = "Report updated successfully"
@@ -268,7 +324,10 @@ def record_report():
 		}}
 	)
 	if insert.matched_count != 1:
-		return failure_message, 404
+		return jsonify({
+			'message': failure_message,
+			'status': False
+		}), 404
 		
 	response = {
 		"message": status_message,
@@ -282,6 +341,7 @@ def record_report():
 @api_key_required
 def index():
 	return "Timesheet API V-0.0.1", 200
+
 
 if __name__ == '__main__':
 	app_environment = os.environ.get('APP_ENVIRONMENT', 'development')
