@@ -1,12 +1,9 @@
-# External libraries and dependencies
-import os
-from datetime import datetime, timedelta
-from flask import Flask, request, jsonify
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
-from flask_bcrypt import Bcrypt
+from flask import request, jsonify, Blueprint
 from bson import ObjectId
-from dotenv import load_dotenv
-from flask_cors import CORS
+from datetime import datetime, timedelta
+from flask_bcrypt import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+
 
 # App logic dependencies
 from app_logic.connect_to_db import users, admins
@@ -16,26 +13,9 @@ from app_logic.validate_signup_data import validate_signup_data
 from app_logic.format_data import format_data
 from app_logic.decorators import api_key_required, admin_protected
 
+bp = Blueprint('main', __name__)
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'SECRET')
-
-
-# Load all environment variables
-load_dotenv()
-
-# Handle CORS
-CORS(app)
-
-# Bcrypt instantiation
-bcrypt = Bcrypt(app)
-
-# JWT instantiation 
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
-jwt = JWTManager(app)
-
-
-@app.route('/admin/login', methods=['POST'])
+@bp.route('/admin/login', methods=['POST'])
 @api_key_required
 def admin_login():
 	data = request.json
@@ -68,7 +48,7 @@ def admin_login():
 	return jsonify(response), 200
 
 
-@app.route('/user/login', methods=['POST'])
+@bp.route('/user/login', methods=['POST'])
 @api_key_required
 def login():
 	data = request.json
@@ -89,7 +69,7 @@ def login():
 			'message': 'Failed to log user in: email not found',
 			'status': False
 		}), 404
-	password_matchs = bcrypt.check_password_hash(user['password'], password)
+	password_matchs = check_password_hash(user['password'], password)
 	if not password_matchs:
 		return jsonify({
 			'message': 'Failed to log user in: invalid credentials',
@@ -108,7 +88,7 @@ def login():
 	return jsonify(response)
 
 
-@app.route('/user/signup', methods=['POST'])
+@bp.route('/user/signup', methods=['POST'])
 @api_key_required
 def signup():
 	validate_signup = validate_signup_data(request.json)
@@ -140,7 +120,7 @@ def signup():
 			'status': False
 		}), 409
 	
-	validate_signup['password'] = bcrypt.generate_password_hash(validate_signup['password'])
+	validate_signup['password'] = generate_password_hash(validate_signup['password'])
 	insert = users.insert_one(validate_signup)
 	user_id = str(insert.inserted_id)
 	if not insert.acknowledged:
@@ -160,7 +140,7 @@ def signup():
 	return response, 201
 
 
-@app.route('/view/reports/all')
+@bp.route('/view/reports/all')
 @api_key_required
 @jwt_required()
 @admin_protected
@@ -200,7 +180,7 @@ def get_all_reports():
 	return jsonify(response)
 
 
-@app.route('/view/reports/<string:user_id>')
+@bp.route('/view/reports/<string:user_id>')
 @api_key_required
 @jwt_required()
 def get_user_reports(user_id):
@@ -256,7 +236,7 @@ def get_user_reports(user_id):
 	return jsonify(response), 200
 
 
-@app.route('/record/report', methods=['POST', 'PUT'])
+@bp.route('/record/report', methods=['POST', 'PUT'])
 @api_key_required
 @jwt_required()
 def record_report():
@@ -337,15 +317,7 @@ def record_report():
 	return jsonify(response), status_code
 
 
-@app.route('/')
+@bp.route('/')
 @api_key_required
 def index():
 	return "Timesheet API V-0.0.1", 200
-
-
-if __name__ == '__main__':
-	app_environment = os.environ.get('APP_ENVIRONMENT', 'development')
-	if app_environment.lower() == 'production':
-		app.run()
-	else:
-		app.run(debug=True)

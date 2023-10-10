@@ -1,6 +1,6 @@
 import os
 
-from app import bcrypt
+from flask_bcrypt import generate_password_hash
 from dotenv import load_dotenv
 from bson import ObjectId
 from app_logic.connect_to_db import users
@@ -17,7 +17,7 @@ def return_db_user():
         'firstname': 'Test',
         'lastname': 'User',
         'email': 'testuser@example.com',
-        'password': bcrypt.generate_password_hash('password')
+        'password': generate_password_hash('password')
     }
     user = users.insert_one(user_obj)
     if user.acknowledged:
