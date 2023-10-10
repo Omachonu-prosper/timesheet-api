@@ -14,7 +14,7 @@ from app_logic.validate_signup_data import validate_signup_data
 # Create a Blueprint for the authentication routes
 auth = Blueprint('auth', __name__)
 
-@auth.route('/admin/login', methods=['POST'])
+@auth.route('/admin/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def admin_login():
 	data = request.json
@@ -47,7 +47,7 @@ def admin_login():
 	return jsonify(response), 200
 
 
-@auth.route('/user/login', methods=['POST'])
+@auth.route('/user/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def login():
 	data = request.json
@@ -87,7 +87,7 @@ def login():
 	return jsonify(response)
 
 
-@auth.route('/user/signup', methods=['POST'])
+@auth.route('/user/signup', methods=['POST'], strict_slashes=False)
 @api_key_required
 def signup():
 	validate_signup = validate_signup_data(request.json)

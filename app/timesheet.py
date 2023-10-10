@@ -17,7 +17,7 @@ from app_logic.decorators import api_key_required, admin_protected
 timesheet = Blueprint('timesheet', __name__)
 
 
-@timesheet.route('/view/reports/all')
+@timesheet.route('/view/reports/all', strict_slashes=False)
 @api_key_required
 @jwt_required()
 @admin_protected
@@ -57,7 +57,7 @@ def get_all_reports():
 	return jsonify(response)
 
 
-@timesheet.route('/view/reports/<string:user_id>')
+@timesheet.route('/view/reports/<string:user_id>', strict_slashes=False)
 @api_key_required
 @jwt_required()
 def get_user_reports(user_id):
@@ -113,7 +113,7 @@ def get_user_reports(user_id):
 	return jsonify(response), 200
 
 
-@timesheet.route('/record/report', methods=['POST', 'PUT'])
+@timesheet.route('/record/report', methods=['POST', 'PUT'], strict_slashes=False)
 @api_key_required
 @jwt_required()
 def record_report():
@@ -194,7 +194,7 @@ def record_report():
 	return jsonify(response), status_code
 
 
-@timesheet.route('/')
+@timesheet.route('/', strict_slashes=False)
 @api_key_required
 def index():
 	return "Timesheet API V-0.0.1", 200
