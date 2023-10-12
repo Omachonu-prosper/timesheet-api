@@ -12,3 +12,4 @@ client = MongoClient(db_uri)
 db = client['worksheet']
 users = db['users']
 admins = db['admins']
+db_utilities = db['utilities']
