@@ -1,3 +1,5 @@
+from datetime import datetime
+
 def validate_signup_data(json):
     response = {}
     firstname = json.get('firstname')
@@ -19,5 +21,6 @@ def validate_signup_data(json):
     response['username'] = username
     response['email'] = email
     response['password'] = password
+    response['created-at'] = datetime.now()
     return response
     
