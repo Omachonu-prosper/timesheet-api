@@ -192,9 +192,3 @@ def record_report():
 		"data": None
 	}
 	return jsonify(response), status_code
-
-
-@reports.route('/', strict_slashes=False)
-@api_key_required
-def index():
-	return "Timesheet API V-0.0.1", 200
