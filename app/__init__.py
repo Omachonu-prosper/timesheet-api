@@ -9,6 +9,7 @@ from flask_cors import CORS
 from .reports import reports
 from .auth import auth
 from .main import main
+from .error_handler import error_handler
 
 # Load all environment variables
 load_dotenv()
@@ -31,4 +32,7 @@ def create_app():
     # JWT instantiation 
     JWTManager(app)
 
+    # Register error handlers
+    error_handler(app)
+    
     return app
