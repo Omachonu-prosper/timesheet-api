@@ -31,3 +31,10 @@ def error_handler(app):
             'message': 'Method not allowed: the http method is not accepted on this endpoint',
             'status': False
         }), 405
+    
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'message': 'Bad request: failed to decode JSON object',
+            'status': False
+        }), 400
