@@ -41,7 +41,7 @@ def edit_name():
     parser.add_args('lastname', True, 'lastname cannot be blank')
     
     if not parser.valid:
-        return parser.generate_errors('Missing required payloads')
+        return parser.generate_errors('Missing required parameter')
     
     user_id = get_jwt_identity()
     data = parser.args

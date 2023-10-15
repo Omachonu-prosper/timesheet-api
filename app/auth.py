@@ -12,6 +12,7 @@ from app_logic.connect_to_db import users, admins
 from app_logic.decorators import api_key_required
 from app_logic.validate_signup_data import validate_signup_data
 from app_logic.generate_employee_id import generate_employee_id
+from app_logic.parser import ParsePayload
 
 # Create a Blueprint for the authentication routes
 auth = Blueprint('auth', __name__)
@@ -19,15 +20,14 @@ auth = Blueprint('auth', __name__)
 @auth.route('/admin/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def admin_login():
-    data = request.json
+    parser = ParsePayload(request.json)
+    parser.add_args('username', True, 'Username must be provided')
+    parser.add_args('password', True, 'password must be provided')
+    if not parser.valid:
+        return parser.generate_errors('Missing required parameter')
+    
+    data = parser.args
     username = data.get('username', None)
-    password = data.get('password', None)
-    if not username or not password:
-        return jsonify({
-            'message': 'Missing required parameter',
-            'status': False
-        }), 400
-
     admin = admins.find_one(
         {"username": username},
         {"_id": 1}
