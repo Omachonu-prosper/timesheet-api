@@ -10,6 +10,7 @@ from .reports import reports
 from .auth import auth
 from .main import main
 from .error_handler import error_handler
+from .users import users_bp
 
 # Load all environment variables
 load_dotenv()
@@ -22,6 +23,7 @@ def create_app():
     app.register_blueprint(reports)
     app.register_blueprint(auth)
     app.register_blueprint(main)
+    app.register_blueprint(users_bp)
 
     # Handle CORS
     CORS(app)
