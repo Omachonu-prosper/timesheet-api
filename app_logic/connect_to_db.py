@@ -10,6 +10,8 @@ else:
 
 client = MongoClient(db_uri)
 db = client['worksheet']
+
+# Collections
 users = db['users']
 admins = db['admins']
 db_utilities = db['utilities']
