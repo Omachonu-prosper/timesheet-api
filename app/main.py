@@ -46,6 +46,7 @@ def status():
 	admin_login = requests.put(url=f'{BASE_URL}/admin/login', headers=headers).status_code
 	user_login = requests.post(url=f'{BASE_URL}/user/login', headers=headers).status_code
 	user_signup = requests.post(url=f'{BASE_URL}/user/signup', headers=headers).status_code
+	user_account_info = requests.post(url=f'{BASE_URL}/user/account/personal-information', headers=headers).status_code
 	index = requests.get(url=BASE_URL, headers=headers).status_code
 	exec_end = datetime.now()
 	exec_duration = exec_end - exec_start
@@ -64,6 +65,7 @@ def status():
 			{ 'endpoint': 'POST - /user/login', 'status_code': user_login },
 			{ 'endpoint': 'POST - /user/signup', 'status_code': user_signup },
 			{ 'endpoint': 'GET - /', 'status_code': index },
+			{ 'endpoint': 'POST - /user/signup', 'status_code': user_account_info }
 		]
 	}
 
