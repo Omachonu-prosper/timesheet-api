@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from .reports import reports
 from .auth import auth
+from .main import main
+from .error_handler import error_handler
+from .users import users_bp
 
 # Load all environment variables
 load_dotenv()
@@ -19,6 +22,8 @@ def create_app():
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(weeks=1)
     app.register_blueprint(reports)
     app.register_blueprint(auth)
+    app.register_blueprint(main)
+    app.register_blueprint(users_bp)
 
     # Handle CORS
     CORS(app)
@@ -29,4 +34,7 @@ def create_app():
     # JWT instantiation 
     JWTManager(app)
 
+    # Register error handlers
+    error_handler(app)
+    
     return app

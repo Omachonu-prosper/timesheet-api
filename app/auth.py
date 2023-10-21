@@ -12,6 +12,7 @@ from app_logic.connect_to_db import users, admins
 from app_logic.decorators import api_key_required
 from app_logic.validate_signup_data import validate_signup_data
 from app_logic.generate_employee_id import generate_employee_id
+from app_logic.parser import ParsePayload
 
 # Create a Blueprint for the authentication routes
 auth = Blueprint('auth', __name__)
@@ -19,17 +20,17 @@ auth = Blueprint('auth', __name__)
 @auth.route('/admin/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def admin_login():
-    data = request.json
+    parser = ParsePayload(request.json)
+    parser.add_args('username', True, 'Username must be provided')
+    parser.add_args('password', True, 'password must be provided')
+    if not parser.valid:
+        return parser.generate_errors('Missing required parameter')
+    
+    data = parser.args
     username = data.get('username', None)
     password = data.get('password', None)
-    if not username or not password:
-        return jsonify({
-            'message': 'Missing required parameter',
-            'status': False
-        }), 400
-
     admin = admins.find_one(
-        {"username": username},
+        {"username": username, "password": password},
         {"_id": 1}
     )
     if admin is None:
@@ -52,15 +53,15 @@ def admin_login():
 @auth.route('/user/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def login():
-    data = request.json
+    parser = ParsePayload(request.json)
+    parser.add_args('email', True, 'email must be provided')
+    parser.add_args('password', True, 'password must be provided')
+    if not parser.valid:
+        return parser.generate_errors('Missing required parameter')
+    
+    data = parser.args
     email = data.get('email', None)
     password = data.get('password', None)
-    if not email or not password:
-        return jsonify({
-            'message': 'Missing required parameter',
-            'status': False
-        }), 400
-
     user = users.find_one(
         {'email': email},
         {'_id': 1, 'password': 1}
@@ -70,6 +71,7 @@ def login():
             'message': 'Failed to log user in: email not found',
             'status': False
         }), 404
+    
     password_matchs = check_password_hash(user['password'], password)
     if not password_matchs:
         return jsonify({
@@ -92,16 +94,23 @@ def login():
 @auth.route('/user/signup', methods=['POST'], strict_slashes=False)
 @api_key_required
 def signup():
-    validate_signup = validate_signup_data(request.json)
-    if validate_signup.get('error'):
-        return jsonify({
-            'message': validate_signup['message'],
-            'status': False
-        }), validate_signup['error-code']
+    parser = ParsePayload(request.json)
+    parser.add_args('email', True, 'email must be provided')
+    parser.add_args('password', True, 'password must be provided')
+    parser.add_args('username', True, 'username must be provided')
+    parser.add_args('firstname', True, 'firstname must be provided')
+    parser.add_args('lastname', True, 'lastname must be provided')
+    if not parser.valid:
+        return parser.generate_errors('Missing required parameter')
+    
+    data = parser.args
+    email = data.get('email', None)
+    password = data.get('password', None)
+    username = data.get('username', None)
 
     # Check if a user with the email already exists
     user = users.find_one(
-        {"email": validate_signup['email']},
+        {"email": email},
         {"_id": 1}
     )
     if user is not None:
@@ -112,7 +121,7 @@ def signup():
     
     # Check if a user with the username already exists
     user = users.find_one(
-        {"username": validate_signup['username']},
+        {"username": username},
         {"_id": 1}
     )
     if user is not None:
@@ -122,9 +131,9 @@ def signup():
         }), 409
 
     employee_id = generate_employee_id()
-    validate_signup['password'] = generate_password_hash(validate_signup['password'])
-    validate_signup['employee-id'] = employee_id
-    insert = users.insert_one(validate_signup)
+    data['password'] = generate_password_hash(password)
+    data['employee-id'] = employee_id
+    insert = users.insert_one(data)
     user_id = str(insert.inserted_id)
     if not insert.acknowledged:
         return jsonify({
