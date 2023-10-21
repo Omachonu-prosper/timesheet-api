@@ -13,7 +13,7 @@ class ParsePayload:
     
     def add_args(self, arg, required=False, help=None):
         """
-        Add a needed entry to the arguements dictionary (Also verify)
+        Add a needed entry to the arguements dictionary (Also verify the entry)
         """
         
         if required:
