@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, request, redirect
+from flask import jsonify, Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson import ObjectId
 
