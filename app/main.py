@@ -2,10 +2,10 @@ import os
 import requests
 
 from flask import jsonify, Blueprint
-from app_logic.decorators import api_key_required
 from dotenv import load_dotenv
 from datetime import datetime
 
+from app_logic.decorators import api_key_required
 from app_logic.connect_to_db import api_statuses
 
 load_dotenv()
