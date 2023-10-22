@@ -1,7 +1,7 @@
 import unittest
 
 from helpers import db_utilities
-from app.app_logic.generate_employee_id import generate_employee_id
+from app_logic.generate_employee_id import generate_employee_id
 
 
 """

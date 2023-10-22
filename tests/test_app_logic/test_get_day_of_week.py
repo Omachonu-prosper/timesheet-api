@@ -1,7 +1,7 @@
 import unittest
 
 from datetime import datetime
-from app.app_logic.get_day_of_week import get_day_of_week
+from app_logic.get_day_of_week import get_day_of_week
 
 
 """

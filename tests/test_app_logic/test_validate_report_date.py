@@ -1,7 +1,7 @@
 import unittest
 
 from datetime import datetime
-from app.app_logic.validate_report_date import validate_report_date
+from app_logic.validate_report_date import validate_report_date
 
 
 """
