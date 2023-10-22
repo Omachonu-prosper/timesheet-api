@@ -10,7 +10,7 @@ users_bp = Blueprint('users', __name__)
 
 
 @users_bp.route('/user/account/activate/<string:user_id>/<string:verification_string>', strict_slashes=False)
-def activate_account(user_id, verification_string):
+def verify_account_activation(user_id, verification_string):
     return "under construction"
 
 
