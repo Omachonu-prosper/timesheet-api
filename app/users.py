@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, redirect
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson import ObjectId
 
@@ -9,11 +9,6 @@ from app_logic.parser import ParsePayload
 users_bp = Blueprint('users', __name__)
 
 
-@users_bp.route('/user/account/activate/<string:user_id>/<string:verification_string>', strict_slashes=False)
-def verify_account_activation(user_id, verification_string):
-    return "under construction"
-
-
 @users_bp.route('/user/account/personal-information', strict_slashes=False)
 @api_key_required
 @jwt_required()
@@ -21,7 +16,7 @@ def personal_info():
     user_id = get_jwt_identity()
     user = users.find_one(
         {'_id': ObjectId(user_id)},
-        {'reports': 0, '_id': 0, 'password': 0, 'created-at': 0}
+        {'email': 1, '_id': 0, 'firstname': 1, 'lastname': 1, 'employee-id': 1, 'middlename': 1}
     )
     if not user:
         return jsonify({

@@ -3,6 +3,7 @@ Authentication related routes (Login and signup)
 """
 
 import os
+from datetime import datetime
 from flask import request, jsonify, Blueprint
 from dotenv import load_dotenv
 from flask_bcrypt import generate_password_hash, check_password_hash
@@ -12,7 +13,7 @@ from flask_jwt_extended import create_access_token, jwt_required
 from app_logic.connect_to_db import users, admins
 from app_logic.decorators import api_key_required, admin_protected
 from app_logic.generate_employee_id import generate_employee_id
-from app_logic.generate_verification_string import generate_verification_string
+from app_logic.generate_verification_code import generate_verification_code
 from app_logic.parser import ParsePayload
 
 # Create a Blueprint for the authentication routes
@@ -75,13 +76,18 @@ def login():
             'message': 'Failed to log user in: email not found',
             'status': False
         }), 404
+    elif user.get('password', None) is None and user.get('activated', False) == False:
+        return jsonify({
+            'message': 'Failed to log user in: please activate your account to login',
+            'status': False
+        }), 401
     
     password_matchs = check_password_hash(user['password'], password)
     if not password_matchs:
         return jsonify({
             'message': 'Failed to log user in: invalid credentials',
             'status': False
-        }), 404
+        }), 401
         
     user_id = str(user['_id'])
     token = create_access_token(identity=user_id)
@@ -120,21 +126,11 @@ def signup():
             'message': 'Failed to create user: email is taken',
             'status': False
         }), 409
-    
-    # # Check if a user with the username already exists
-    # user = users.find_one(
-    #     {"username": username},
-    #     {"_id": 1}
-    # )
-    # if user is not None:
-    #     return jsonify({
-    #         'message': 'Failed to create user: username is taken',
-    #         'status': False
-    #     }), 409
 
     data['employee-id'] = generate_employee_id()
-    data['verification-string'] = generate_verification_string()
+    data['verification-code'] = generate_verification_code()
     data['activated'] = False
+    data['created-at'] = datetime.now()
     insert = users.insert_one(data)
     user_id = str(insert.inserted_id)
     if not insert.acknowledged:
@@ -147,8 +143,8 @@ def signup():
         'message': "User created successfully",
         'data': {
             'employee-id': data['employee-id'],
+            'verification-code': data['verification-code'],
             'user-id': user_id,
-            'activation-link': f"{BASE_URL}/user/account/activate/{user_id}/{data['verification-string']}",
             'email': data['email']
         },
         'status': True
@@ -158,4 +154,40 @@ def signup():
 
 @auth.route('/user/account/activate', methods=['POST'], strict_slashes=False)
 def activate_account():
-    return "under construction"
+    parser = ParsePayload(request.json)
+    parser.add_args('password', True, 'password must be provided')
+    parser.add_args('email', True, 'email must be provided')
+    parser.add_args('verification-code', True, 'verification-code must be provided')
+    if not parser.valid:
+        return parser.generate_errors('Missing required parameter')
+    
+    data = parser.args
+    password = generate_password_hash(data.get('password', None))
+    email = data.get('email', None)
+    verification_code = data.get('verification-code', None)
+
+    user = users.find_one({'email': email}, {'_id': 1})
+    user_id = str(user['_id'])
+    if not user:
+        return jsonify({
+            'message': 'Not found: check the email submitted',
+            'status': False
+        }), 404
+    
+    user = users.update_one(
+        {'email': email, 'verification-code': verification_code},
+        {'$set': {'password': password, 'activated': True, 'verification-code': None, 'activated-at': datetime.now()}}
+    )
+    if not user.matched_count:
+        return jsonify({
+            'message': 'Invalid code: check the verification code submitted',
+            'status': False
+        }), 400
+    
+    token = create_access_token(identity=user_id)
+    return jsonify({
+        'message': 'Account activated successfully',
+        'status': True,
+        'user-id': user_id,
+        'access_token': token
+    })
