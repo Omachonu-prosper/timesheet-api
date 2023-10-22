@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, request, abort
+from flask import jsonify, Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson import ObjectId
 
@@ -7,6 +7,11 @@ from app_logic.decorators import api_key_required
 from app_logic.parser import ParsePayload
 
 users_bp = Blueprint('users', __name__)
+
+
+@users_bp.route('/user/account/activate/<string:user_id>/<string:verification_string>', strict_slashes=False)
+def activate_account(user_id, verification_string):
+    return "under construction"
 
 
 @users_bp.route('/user/account/personal-information', strict_slashes=False)
