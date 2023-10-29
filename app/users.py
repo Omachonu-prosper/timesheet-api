@@ -2,9 +2,9 @@ from flask import jsonify, Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson import ObjectId
 
-from app_logic.connect_to_db import users
-from app_logic.decorators import api_key_required
-from app_logic.parser import ParsePayload
+from .app_logic.connect_to_db import users
+from .app_logic.decorators import api_key_required
+from .app_logic.parser import ParsePayload
 
 users_bp = Blueprint('users', __name__)
 

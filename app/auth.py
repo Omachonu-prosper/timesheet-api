@@ -10,11 +10,11 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required
 
 # App logic dependencies
-from app_logic.connect_to_db import users, admins
-from app_logic.decorators import api_key_required, admin_protected
-from app_logic.generate_employee_id import generate_employee_id
-from app_logic.generate_verification_code import generate_verification_code
-from app_logic.parser import ParsePayload
+from .app_logic.connect_to_db import users, admins
+from .app_logic.decorators import api_key_required, admin_protected
+from .app_logic.generate_employee_id import generate_employee_id
+from .app_logic.generate_verification_code import generate_verification_code
+from .app_logic.parser import ParsePayload
 
 # Create a Blueprint for the authentication routes
 auth = Blueprint('auth', __name__)

@@ -5,8 +5,8 @@ from flask import jsonify, Blueprint
 from dotenv import load_dotenv
 from datetime import datetime
 
-from app_logic.decorators import api_key_required
-from app_logic.connect_to_db import api_statuses
+from .app_logic.decorators import api_key_required
+from .app_logic.connect_to_db import api_statuses
 
 load_dotenv()
 main = Blueprint('main', __name__)

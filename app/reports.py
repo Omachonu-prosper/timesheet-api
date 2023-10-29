@@ -8,11 +8,11 @@ from datetime import datetime, timedelta
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 # App logic dependencies
-from app_logic.connect_to_db import users
-from app_logic.validate_record_report import validate_record_report
-from app_logic.validate_report_date import validate_report_date
-from app_logic.format_data import format_data
-from app_logic.decorators import api_key_required, admin_protected
+from .app_logic.connect_to_db import users
+from .app_logic.validate_record_report import validate_record_report
+from .app_logic.validate_report_date import validate_report_date
+from .app_logic.format_data import format_data
+from .app_logic.decorators import api_key_required, admin_protected
 
 reports = Blueprint('reports', __name__)
 
