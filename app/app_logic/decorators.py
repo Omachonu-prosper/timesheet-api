@@ -2,7 +2,7 @@ import os
 from flask import request, jsonify
 from functools import wraps
 from flask_jwt_extended import get_jwt_identity
-from app_logic.connect_to_db import admins
+from .connect_to_db import admins
 from bson import ObjectId
 
 

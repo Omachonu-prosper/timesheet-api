@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from app_logic.get_day_of_week import get_day_of_week
+from .get_day_of_week import get_day_of_week
 
 def validate_report_date(date):
     response = {}

@@ -1,4 +1,4 @@
-from app_logic.connect_to_db import db_utilities
+from .connect_to_db import db_utilities
 
 def generate_employee_id():
     """
