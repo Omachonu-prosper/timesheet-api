@@ -1,18 +1,18 @@
 import os
 import requests
 
-from flask import jsonify, Blueprint
+from flask import jsonify
 from dotenv import load_dotenv
 from datetime import datetime
 
-from .app_logic.decorators import api_key_required
-from .app_logic.connect_to_db import api_statuses
+from core import app
+from core.utils.decorators import api_key_required
+from core.utils.connect_to_db import api_statuses
 
 load_dotenv()
-main = Blueprint('main', __name__)
 
 
-@main.route('/', strict_slashes=False)
+@app.route('/', strict_slashes=False)
 @api_key_required
 def index():
 	return jsonify({
@@ -21,7 +21,7 @@ def index():
     }), 200
 
 
-@main.route('/api/status', strict_slashes=False)
+@app.route('/api/status', strict_slashes=False)
 @api_key_required
 def status():
 	exec_start = datetime.now()

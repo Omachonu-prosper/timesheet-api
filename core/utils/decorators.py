@@ -29,7 +29,7 @@ def api_key_required(f):
 		return f(*args, **kwargs)
 	return wrapper
 
-# Decorator to protect admin only routes
+# Decorator to protect admin only endpoints
 def admin_protected(f):
 	@wraps(f)
 	def wrapper(*args, **kwargs):

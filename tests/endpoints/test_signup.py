@@ -3,7 +3,7 @@ import requests
 import json
 import string
 import random
-import helpers
+import tests.helpers as helpers
 
 
 """

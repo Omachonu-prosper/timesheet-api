@@ -3,7 +3,7 @@ import os
 from flask_bcrypt import generate_password_hash
 from dotenv import load_dotenv
 from bson import ObjectId
-from app.app_logic.connect_to_db import users, db_utilities
+from core.utils.connect_to_db import users, db_utilities
 
 load_dotenv()
 API_KEY = os.environ.get('API_KEY', None)

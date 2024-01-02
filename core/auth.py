@@ -10,19 +10,17 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required
 
 # App logic dependencies
-from .app_logic.connect_to_db import users, admins
-from .app_logic.decorators import api_key_required, admin_protected
-from .app_logic.generate_employee_id import generate_employee_id
-from .app_logic.generate_verification_code import generate_verification_code
-from .app_logic.parser import ParsePayload
+from core import app
+from core.utils.connect_to_db import users, admins
+from core.utils.decorators import api_key_required, admin_protected
+from core.utils.generate_employee_id import generate_employee_id
+from core.utils.generate_verification_code import generate_verification_code
+from core.utils.parser import ParsePayload
 
 # Create a Blueprint for the authentication routes
-auth = Blueprint('auth', __name__)
 load_dotenv()
-BASE_URL = os.getenv('BASE_URL', None)
 
-
-@auth.route('/admin/login', methods=['POST'], strict_slashes=False)
+@app.route('/admin/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def admin_login():
     parser = ParsePayload(request.json)
@@ -55,7 +53,7 @@ def admin_login():
     return jsonify(response), 200
 
 
-@auth.route('/user/login', methods=['POST'], strict_slashes=False)
+@app.route('/user/login', methods=['POST'], strict_slashes=False)
 @api_key_required
 def login():
     parser = ParsePayload(request.json)
@@ -101,10 +99,8 @@ def login():
     return jsonify(response)
 
 
-@auth.route('/user/signup', methods=['POST'], strict_slashes=False)
+@app.route('/user/signup', methods=['POST'], strict_slashes=False)
 @api_key_required
-@jwt_required()
-@admin_protected
 def signup():
     parser = ParsePayload(request.json)
     parser.add_args('email', True, 'email must be provided')
@@ -152,7 +148,7 @@ def signup():
     return response, 201
 
 
-@auth.route('/user/account/activate', methods=['POST'], strict_slashes=False)
+@app.route('/user/account/activate', methods=['POST'], strict_slashes=False)
 def activate_account():
     parser = ParsePayload(request.json)
     parser.add_args('password', True, 'password must be provided')

@@ -1,6 +1,6 @@
 import unittest
 import requests
-import helpers
+import tests.helpers as helpers
 
 
 """

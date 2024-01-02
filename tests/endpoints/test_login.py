@@ -3,7 +3,7 @@ import requests
 import json
 import string
 import random
-import helpers
+import tests.helpers as helpers
 
 
 """
@@ -40,6 +40,7 @@ class TestLogin(unittest.TestCase):
 
 
     def setUp(self):
+        # Sign up a user which can then be used to test login functionalities
         self.user = requests.post(
             url='http://localhost:5000/user/signup',
             headers=self.headers,
@@ -106,4 +107,5 @@ class TestLogin(unittest.TestCase):
         self.assertIsNotNone(req.json()['user-id'])
 
     def tearDown(self):
+        print(self.user.json())
         helpers.delete_user(self.user.json()['user-id'])

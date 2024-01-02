@@ -1,7 +1,7 @@
 import unittest
 import json
 import requests
-import helpers
+import tests.helpers as helpers
 
 from datetime import datetime, timedelta
 

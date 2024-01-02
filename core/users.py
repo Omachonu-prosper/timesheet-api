@@ -1,15 +1,14 @@
-from flask import jsonify, Blueprint, request
+from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson import ObjectId
 
-from .app_logic.connect_to_db import users
-from .app_logic.decorators import api_key_required
-from .app_logic.parser import ParsePayload
+from core import app
+from core.utils.connect_to_db import users
+from core.utils.decorators import api_key_required
+from core.utils.parser import ParsePayload
 
-users_bp = Blueprint('users', __name__)
 
-
-@users_bp.route('/user/account/personal-information', strict_slashes=False)
+@app.route('/user/account/personal-information', strict_slashes=False)
 @api_key_required
 @jwt_required()
 def personal_info():
@@ -31,7 +30,7 @@ def personal_info():
     }), 200
 
 
-@users_bp.route('/user/account/personal-information/name', methods=['PUT'], strict_slashes=False)
+@app.route('/user/account/personal-information/name', methods=['PUT'], strict_slashes=False)
 @api_key_required
 @jwt_required()
 def edit_name():

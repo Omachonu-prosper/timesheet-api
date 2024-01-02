@@ -2,22 +2,21 @@
 System related routes (CRUD operations for the system operations)
 """
 
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify
 from bson import ObjectId
 from datetime import datetime, timedelta
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 # App logic dependencies
-from .app_logic.connect_to_db import users
-from .app_logic.validate_record_report import validate_record_report
-from .app_logic.validate_report_date import validate_report_date
-from .app_logic.format_data import format_data
-from .app_logic.decorators import api_key_required, admin_protected
+from core import app
+from core.utils.connect_to_db import users
+from core.utils.validate_record_report import validate_record_report
+from core.utils.validate_report_date import validate_report_date
+from core.utils.format_data import format_data
+from core.utils.decorators import api_key_required, admin_protected
 
-reports = Blueprint('reports', __name__)
 
-
-@reports.route('/view/reports/all', strict_slashes=False)
+@app.route('/view/reports/all', strict_slashes=False)
 @api_key_required
 @jwt_required()
 @admin_protected
@@ -57,7 +56,7 @@ def get_all_reports():
 	return jsonify(response)
 
 
-@reports.route('/view/reports/<string:user_id>', strict_slashes=False)
+@app.route('/view/reports/<string:user_id>', strict_slashes=False)
 @api_key_required
 @jwt_required()
 def get_user_reports(user_id):
@@ -113,7 +112,7 @@ def get_user_reports(user_id):
 	return jsonify(response), 200
 
 
-@reports.route('/record/report', methods=['POST', 'PUT'], strict_slashes=False)
+@app.route('/record/report', methods=['POST', 'PUT'], strict_slashes=False)
 @api_key_required
 @jwt_required()
 def record_report():
