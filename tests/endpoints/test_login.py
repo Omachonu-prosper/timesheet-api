@@ -21,43 +21,23 @@ class TestLogin(unittest.TestCase):
         'x-api-key': helpers.API_KEY,
         'Content-Type': 'application/json'
     }
-    username = ''.join(random.choices(
-        string.ascii_letters + string.digits,
-        k=random.randint(5, 10)
-    ))
-    email = ''.join(random.choices(
-        string.ascii_letters + string.digits,
-        k=random.randint(5, 10)
-    )) + '@test.com'
-    password = 'password'
-    payload = {
-        'firstname': 'firstname',
-        'lastname': 'lastname',
-        'username': username,
-        'email': email,
-        'password': password
-    }
 
 
     def setUp(self):
-        # Sign up a user which can then be used to test login functionalities
-        self.user = requests.post(
-            url='http://localhost:5000/user/signup',
-            headers=self.headers,
-            data=json.dumps(self.payload)
-        )
+        self.user = helpers.return_db_user()
+        helpers.activate_user(self.user['_id'])
 
 
     def test_incomplete_payload(self):
         req_without_passwd = requests.post(
             url=self.url,
             headers=self.headers,
-            data=json.dumps({ 'email': self.email }
+            data=json.dumps({ 'email': self.user['email'] }
         ))
         req_without_email = requests.post(
             url=self.url,
             headers=self.headers,
-            data=json.dumps({ 'password': self.password }
+            data=json.dumps({ 'password': self.user['password'] }
         ))
         self.assertEqual(req_without_passwd.status_code, 400)
         self.assertEqual(req_without_email.status_code, 400)
@@ -70,11 +50,11 @@ class TestLogin(unittest.TestCase):
             url=self.url,
             headers=self.headers,
             data=json.dumps({
-                'email': self.email,
+                'email': self.user['email'],
                 'password': 'wrong-password'
             }
-        ))  
-        self.assertEqual(req.status_code, 404)
+        ))
+        self.assertEqual(req.status_code, 401)
         self.assertFalse(req.json()['status'])
 
 
@@ -84,7 +64,7 @@ class TestLogin(unittest.TestCase):
             headers=self.headers,
             data=json.dumps({
                 'email': 'wrong-email',
-                'password': self.password
+                'password': self.user['password']
             }
         ))
         self.assertEqual(req.status_code, 404)
@@ -96,8 +76,8 @@ class TestLogin(unittest.TestCase):
             url=self.url,
             headers=self.headers,
             data=json.dumps({
-                'email': self.email,
-                'password': self.password
+                'email': self.user['email'],
+                'password': self.user['password']
             }
         ))
         self.assertEqual(req.status_code, 200)
@@ -106,6 +86,6 @@ class TestLogin(unittest.TestCase):
         self.assertIsNotNone(req.json()['message'])
         self.assertIsNotNone(req.json()['user-id'])
 
+
     def tearDown(self):
-        print(self.user.json())
-        helpers.delete_user(self.user.json()['user-id'])
+        helpers.delete_user(self.user['_id'])

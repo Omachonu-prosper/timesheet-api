@@ -34,3 +34,13 @@ def delete_user(user_id):
     if user.deleted_count != 1:
         return False
     return True
+
+# Simulate user account activation for test purposes
+def activate_user(user_id):
+    activate = users.update_one(
+        {'_id': ObjectId(user_id)},
+        {'$set': {'activated': True}}
+    )
+    if activate.matched_count:
+        return True
+    return False

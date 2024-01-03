@@ -67,7 +67,7 @@ def login():
     password = data.get('password', None)
     user = users.find_one(
         {'email': email},
-        {'_id': 1, 'password': 1}
+        {'_id': 1, 'password': 1, 'activated': 1}
     )
     if user is None:
         return jsonify({
@@ -105,6 +105,7 @@ def signup():
     parser = ParsePayload(request.json)
     parser.add_args('email', True, 'email must be provided')
     parser.add_args('firstname', True, 'firstname must be provided')
+    parser.add_args('middlename', True, 'middlename is optional')
     parser.add_args('lastname', True, 'lastname must be provided')
     if not parser.valid:
         return parser.generate_errors('Missing required parameter')
