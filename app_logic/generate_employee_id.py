@@ -8,7 +8,14 @@ def generate_employee_id():
         - Incriment the id counter
     """
     db_utils = db_utilities.find_one({}, {'id_counter': 1, '_id': 0})
-    last_id = db_utils['id_counter']
+    if not db_utils:
+        # First employee record
+        last_id = 0
+    else:
+        last_id = db_utils['id_counter']
+
     employee_id = f'IDL-{1 + last_id:06d}'
-    db_utils = db_utilities.update_one({}, {'$inc': {'id_counter': 1}})
+    db_utils = db_utilities.update_one(
+        {}, {'$inc': {'id_counter': 1}}, upsert=True
+    )
     return employee_id
