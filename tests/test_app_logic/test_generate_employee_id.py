@@ -10,6 +10,7 @@ Test function that generates employee IDs for employees
 Test cases
 - Correct id is generated
 - Id counter is incrimented
+- Works with unset id counter
 """
 class TestGenerateEmployeeId(unittest.TestCase):    
     def test_correct_id_generated(self):
@@ -28,3 +29,9 @@ class TestGenerateEmployeeId(unittest.TestCase):
         db_utils = db_utilities.find_one({}, {'id_counter': 1, '_id': 0})
         new_id = db_utils['id_counter']
         self.assertEqual(last_id + 1, new_id)
+
+
+    def test_works_with_unset_id_counter(self):
+        db_utilities.drop()
+        employee_id = generate_employee_id()
+        self.assertEqual(employee_id, f'IDL-{1:06d}')
